@@ -71,6 +71,15 @@
   z-index: 49;
 }
 
+/* ── Screen wrapper (barrel filter is applied here) ──────────────────────── */
+.cathode-screen {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  /* filter: url(#...) applied inline when curvature > 0 */
+}
+
 /* ── Header ───────────────────────────────────────────────────────────────── */
 .cathode-header-wrapper {
   flex-shrink: 0;

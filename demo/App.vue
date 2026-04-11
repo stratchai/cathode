@@ -110,8 +110,7 @@ const defaultColDef: ColDef = { resizable: true, sortable: true }
 
 const gridApi    = ref<GridApi | null>(null)
 const theme      = ref<'none' | 'phosphor' | 'amber' | 'paper'>('none')
-const curvature  = ref(30)
-const perspective = ref(600)
+const curvature  = ref(25)
 const scanlines  = ref(true)
 const glow       = ref(true)
 const quickText  = ref('')
@@ -173,12 +172,8 @@ const bgStyle = computed(() => ({
       </select>
 
       <!-- curvature -->
-      <label>Curve {{ curvature }}°</label>
-      <input type="range" min="0" max="45" step="1" v-model.number="curvature" style="width:90px" />
-
-      <!-- perspective -->
-      <label>Persp {{ perspective }}px</label>
-      <input type="range" min="200" max="1400" step="50" v-model.number="perspective" style="width:90px" />
+      <label>Curve {{ curvature }}</label>
+      <input type="range" min="0" max="45" step="1" v-model.number="curvature" style="width:110px" />
 
       <label><input type="checkbox" v-model="scanlines" /> Scanlines</label>
       <label><input type="checkbox" v-model="glow" />      Glow</label>
@@ -204,7 +199,6 @@ const bgStyle = computed(() => ({
         :row-height="28"
         :theme="theme"
         :curvature="curvature"
-        :perspective="perspective"
         :scanlines="scanlines"
         :glow="glow"
         :pagination="true"
