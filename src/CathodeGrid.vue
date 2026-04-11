@@ -29,8 +29,8 @@ const props = withDefaults(defineProps<{
   rowData:            () => [],
   rowHeight:          28,
   theme:              'none',
-  curvature:          10,
-  perspective:        1400,
+  curvature:          30,
+  perspective:        600,
   scanlines:          true,
   glow:               true,
   pagination:         false,
@@ -101,12 +101,17 @@ const gridTotalWidth = computed(() =>
 // Left-most column: positive rotateY (right face tips toward viewer).
 // Right-most column: negative rotateY (left face tips toward viewer).
 // Centre column: 0°  → looks as if the screen bulges toward you.
+//
+// Quadratic distribution: t → sign(t)·t²
+//   Centre columns stay nearly flat; edge columns ramp up hard.
+//   This matches the shape of a real CRT phosphor-screen curve.
 
 function colAngle(colIdx: number, total: number): number {
   if (total <= 1 || props.curvature === 0) return 0
   const centre     = (total - 1) / 2
-  const normalised = (colIdx - centre) / centre   // [-1, 1]
-  return -normalised * props.curvature             // negative = right cols tilt left
+  const t          = (colIdx - centre) / (centre || 1)   // [-1, 1]
+  const curved     = Math.sign(t) * t * t                // quadratic: stays flat at centre
+  return -curved * props.curvature
 }
 
 // ── Cell value / format helpers ───────────────────────────────────────────────
@@ -144,9 +149,14 @@ function getCellStyle(col: ResolvedCol, row: any): CSSProperties {
 // ── Inline style builders ─────────────────────────────────────────────────────
 
 function cellTransformStyle(colIdx: number, total: number): CSSProperties {
-  const angle = colAngle(colIdx, total)
+  const angle   = colAngle(colIdx, total)
+  const absRad  = Math.abs(angle) * Math.PI / 180
+  // Columns facing away are dimmer — simulates ambient light on a curved surface.
+  // brightness range: 1.0 (centre) → ~0.75 (hard edge at curvature=45°)
+  const brightness = (1 - Math.sin(absRad) * 0.30).toFixed(3)
   return {
     transform:  `perspective(${props.perspective}px) rotateY(${angle}deg)`,
+    filter:     `brightness(${brightness})`,
   }
 }
 

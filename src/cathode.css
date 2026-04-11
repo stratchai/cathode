@@ -64,8 +64,8 @@
   inset: 0;
   background: radial-gradient(
     ellipse at 50% 50%,
-    transparent 65%,
-    rgba(0,0,0,0.5) 100%
+    transparent 55%,
+    rgba(0,0,0,0.30) 100%
   );
   pointer-events: none;
   z-index: 49;
