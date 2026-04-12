@@ -13,9 +13,9 @@ export default defineConfig({
       formats: ['es', 'umd'],
     },
     rollupOptions: {
-      external: ['vue'],
+      external: ['vue', 'three'],
       output: {
-        globals:       { vue: 'Vue' },
+        globals:       { vue: 'Vue', three: 'THREE' },
         assetFileNames: 'cathode.css',
       },
     },
