@@ -80,7 +80,8 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+# dist is intentionally tracked — cathode ships built artifacts so GitHub installs work
+# dist
 
 # Gatsby files
 .cache/
