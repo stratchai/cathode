@@ -321,18 +321,18 @@
    THEME: paper  (light / Lumen-style)
    ═══════════════════════════════════════════════════════════════════════════ */
 .cathode-theme-paper {
-  --cathode-bg:          #f6f6f6;
-  --cathode-surface:     #f0f0f0;
-  --cathode-header-bg:   #ffffff;
-  --cathode-text:        #222222;
-  --cathode-text-header: #158cba;
+  --cathode-bg:          #fafafa;
+  --cathode-surface:     #ffffff;
+  --cathode-header-bg:   #fafafa;
+  --cathode-text:        #111111;
+  --cathode-text-header: #0f7bbf;
   --cathode-text-muted:  #999999;
-  --cathode-border:      #dee2e6;
-  --cathode-accent:      #158cba;
-  --cathode-row-hover:   rgba(21,140,186,0.05);
-  --cathode-pinned-bg:   rgba(0,0,0,0.04);
+  --cathode-border:      #e8e8e8;
+  --cathode-accent:      #0f7bbf;
+  --cathode-row-hover:   rgba(0,0,0,0.03);
+  --cathode-pinned-bg:   rgba(0,0,0,0.02);
   --cathode-input-bg:    #ffffff;
-  --cathode-scrollbar:   #dee2e6;
+  --cathode-scrollbar:   #e0e0e0;
   font-family: system-ui, -apple-system, sans-serif;
 }
 /* Scanlines look bad on light theme — suppress */
