@@ -1012,11 +1012,12 @@ const accentColor = computed(() => themeC.value.accent)
 }
 
 .cathode-canvas {
-  flex: 1;
-  width: 100%;
-  min-height: 0;
+  /* Do NOT set width/height here — renderer.setSize() owns the canvas dimensions
+     via inline styles. CSS-based sizing causes the old pixel buffer to stretch
+     visibly between the container resize and the ResizeObserver correction. */
   display: block;
   outline: none;
+  flex-shrink: 0;
 }
 
 /* Filter popup — all colours applied inline from themeC computed */
