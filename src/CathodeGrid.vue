@@ -809,6 +809,8 @@ const gridApi: GridApi = {
     URL.revokeObjectURL(url)
   },
 
+  resize() { sizeToContainer() },
+
   resetColumnState() {
     hiddenCols.clear()
     for (const def of props.columnDefs) {

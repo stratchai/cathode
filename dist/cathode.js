@@ -1,4 +1,4 @@
-import { defineComponent as Xe, ref as R, reactive as pe, computed as B, watch as K, nextTick as we, onMounted as Ze, onUnmounted as Je, openBlock as ae, createElementBlock as re, normalizeStyle as Z, createElementVNode as ee, withModifiers as Me, withKeys as Qe, createCommentVNode as de, toDisplayString as te } from "vue";
+import { defineComponent as Xe, ref as R, reactive as we, computed as B, watch as K, nextTick as me, onMounted as Ze, onUnmounted as Je, openBlock as ae, createElementBlock as re, normalizeStyle as Z, createElementVNode as ee, withModifiers as Me, withKeys as Qe, createCommentVNode as de, toDisplayString as te } from "vue";
 import * as W from "three";
 const le = {
   none: {
@@ -61,8 +61,8 @@ function tt(g, u) {
     s % 2 === 1 && (e.fillStyle = d.rowAlt, e.fillRect(0, C, i, h)), s === u.hoveredRow && s !== u.selectedRow && (e.fillStyle = "rgba(255,255,255,0.045)", e.fillRect(0, C, i, h)), s === u.selectedRow && (e.fillStyle = lt(d.accent, 0.1), e.fillRect(0, C, i, h)), e.strokeStyle = d.border, e.lineWidth = 1, e.beginPath(), e.moveTo(0, C + h - 0.5), e.lineTo(i, C + h - 0.5), e.stroke();
     let b = 0;
     for (let I = 0; I < T.length; I++) {
-      const x = T[I], w = u.getCellStyle(x, f), A = w.color ?? d.text, L = w.textAlign ?? "left", U = u.formatCell(x, f);
-      e.save(), e.beginPath(), e.rect(b + 1, C, x.width - 2, h), e.clip(), e.font = `${He}px 'Courier New', Courier, monospace`, e.fillStyle = A, e.textBaseline = "middle", m && (e.shadowBlur = 4, e.shadowColor = A), L === "right" ? (e.textAlign = "right", e.fillText(U, b + x.width - 8, C + h / 2)) : (e.textAlign = "left", e.fillText(U, b + 8, C + h / 2)), e.shadowBlur = 0, e.restore(), s === u.selectedRow && I === u.selectedCol && (e.strokeStyle = d.accent, e.lineWidth = 2, e.strokeRect(b + 1.5, C + 1.5, x.width - 3, h - 3)), e.strokeStyle = d.border, e.lineWidth = 1, e.beginPath(), e.moveTo(b + x.width - 0.5, C), e.lineTo(b + x.width - 0.5, C + h), e.stroke(), b += x.width;
+      const x = T[I], w = u.getCellStyle(x, f), A = w.color ?? d.text, z = w.textAlign ?? "left", U = u.formatCell(x, f);
+      e.save(), e.beginPath(), e.rect(b + 1, C, x.width - 2, h), e.clip(), e.font = `${He}px 'Courier New', Courier, monospace`, e.fillStyle = A, e.textBaseline = "middle", m && (e.shadowBlur = 4, e.shadowColor = A), z === "right" ? (e.textAlign = "right", e.fillText(U, b + x.width - 8, C + h / 2)) : (e.textAlign = "left", e.fillText(U, b + 8, C + h / 2)), e.shadowBlur = 0, e.restore(), s === u.selectedRow && I === u.selectedCol && (e.strokeStyle = d.accent, e.lineWidth = 2, e.strokeRect(b + 1.5, C + 1.5, x.width - 3, h - 3)), e.strokeStyle = d.border, e.lineWidth = 1, e.beginPath(), e.moveTo(b + x.width - 0.5, C), e.lineTo(b + x.width - 0.5, C + h), e.stroke(), b += x.width;
     }
   }
   if (e.restore(), p.length > 0) {
@@ -73,8 +73,8 @@ function tt(g, u) {
       e.fillStyle = "rgba(0,0,0,0.35)", e.fillRect(0, b, i, h);
       let I = 0;
       for (let x = 0; x < T.length; x++) {
-        const w = T[x], A = u.getCellStyle(w, C), L = A.color ?? d.text, U = A.textAlign ?? "left", ie = u.formatCell(w, C);
-        e.save(), e.beginPath(), e.rect(I + 1, b, w.width - 2, h), e.clip(), e.font = `bold ${He}px 'Courier New', Courier, monospace`, e.fillStyle = L, e.textBaseline = "middle", U === "right" ? (e.textAlign = "right", e.fillText(ie, I + w.width - 8, b + h / 2)) : (e.textAlign = "left", e.fillText(ie, I + 8, b + h / 2)), e.restore(), e.strokeStyle = d.border, e.lineWidth = 1, e.beginPath(), e.moveTo(I + w.width - 0.5, b), e.lineTo(I + w.width - 0.5, b + h), e.stroke(), I += w.width;
+        const w = T[x], A = u.getCellStyle(w, C), z = A.color ?? d.text, U = A.textAlign ?? "left", ie = u.formatCell(w, C);
+        e.save(), e.beginPath(), e.rect(I + 1, b, w.width - 2, h), e.clip(), e.font = `bold ${He}px 'Courier New', Courier, monospace`, e.fillStyle = z, e.textBaseline = "middle", U === "right" ? (e.textAlign = "right", e.fillText(ie, I + w.width - 8, b + h / 2)) : (e.textAlign = "left", e.fillText(ie, I + 8, b + h / 2)), e.restore(), e.strokeStyle = d.border, e.lineWidth = 1, e.beginPath(), e.moveTo(I + w.width - 0.5, b), e.lineTo(I + w.width - 0.5, b + h), e.stroke(), I += w.width;
       }
       e.strokeStyle = d.border, e.lineWidth = 1, e.beginPath(), e.moveTo(0, b + h - 0.5), e.lineTo(i, b + h - 0.5), e.stroke();
     }
@@ -94,7 +94,7 @@ function nt(g, u, e, i, D) {
   const d = g / e, T = 1 - u / i, [y, p] = ot(d, T, D);
   return y < 0 || y > 1 || p < 0 || p > 1 ? [-1, -1] : [y * e, (1 - p) * i];
 }
-function me(g, u) {
+function xe(g, u) {
   let e = 0;
   for (let i = 0; i < g; i++) e += u[i].width;
   return e;
@@ -191,7 +191,7 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
   },
   emits: ["grid-ready", "row-clicked", "cell-selected", "column-resized", "sort-changed", "filter-changed"],
   setup(g, { emit: u }) {
-    const e = g, i = u, D = R(e.rowData ?? []), d = R(e.pinnedBottomRowData ?? []), T = R(""), y = R(null), p = pe({}), h = pe({}), _ = pe(/* @__PURE__ */ new Set()), m = R(0), O = R(0), M = R(0), F = R(0), $ = R(0), Y = R(-1), s = R(null), f = R(null), C = R({ x: 0, y: S }), b = R("");
+    const e = g, i = u, D = R(e.rowData ?? []), d = R(e.pinnedBottomRowData ?? []), T = R(""), y = R(null), p = we({}), h = we({}), _ = we(/* @__PURE__ */ new Set()), m = R(0), O = R(0), M = R(0), F = R(0), $ = R(0), Y = R(-1), s = R(null), f = R(null), C = R({ x: 0, y: S }), b = R("");
     function I(t) {
       return t.colId ?? t.field ?? (t.headerName ? t.headerName.toLowerCase().replace(/\s+/g, "_") : void 0) ?? `col_${Math.random().toString(36).slice(2, 7)}`;
     }
@@ -218,16 +218,16 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
       const l = d.value.length * e.rowHeight, n = t - S - l, o = Math.max(1, Math.floor(n / e.rowHeight));
       return Math.min(o, e.paginationPageSize);
     });
-    function L(t, l) {
+    function z(t, l) {
       if (l.colDef.valueGetter) return l.colDef.valueGetter({ data: t, colDef: l.colDef });
       if (l.colDef.field) return t[l.colDef.field];
     }
     function U(t, l) {
-      const n = L(l, t);
+      const n = z(l, t);
       return t.colDef.valueFormatter ? t.colDef.valueFormatter({ value: n, data: l, colDef: t.colDef }) ?? "" : t.colDef.cellRenderer ? (t.colDef.cellRenderer({ value: n, data: l, colDef: t.colDef }) ?? "").replace(/<[^>]+>/g, "") : n == null ? "" : String(n);
     }
     function ie(t, l) {
-      return t.colDef.cellStyle ? typeof t.colDef.cellStyle == "function" ? t.colDef.cellStyle({ value: L(l, t), data: l, colDef: t.colDef }) ?? {} : t.colDef.cellStyle : {};
+      return t.colDef.cellStyle ? typeof t.colDef.cellStyle == "function" ? t.colDef.cellStyle({ value: z(l, t), data: l, colDef: t.colDef }) ?? {} : t.colDef.cellStyle : {};
     }
     const q = B(() => {
       O.value;
@@ -235,7 +235,7 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
       const l = T.value.trim().toLowerCase();
       l && (t = t.filter(
         (n) => x.value.some(
-          (o) => String(L(n, o) ?? "").toLowerCase().includes(l)
+          (o) => String(z(n, o) ?? "").toLowerCase().includes(l)
         )
       ));
       for (const [n, o] of Object.entries(p)) {
@@ -244,16 +244,16 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
         if (c)
           if (o.startsWith("__eq__")) {
             const a = o.slice(6).toLowerCase();
-            t = t.filter((v) => String(L(v, c) ?? "").toLowerCase() === a);
+            t = t.filter((v) => String(z(v, c) ?? "").toLowerCase() === a);
           } else {
             const a = o.toLowerCase();
-            t = t.filter((v) => String(L(v, c) ?? "").toLowerCase().includes(a));
+            t = t.filter((v) => String(z(v, c) ?? "").toLowerCase().includes(a));
           }
       }
       if (y.value) {
         const { colId: n, dir: o } = y.value, c = x.value.find((a) => a.colId === n);
         c && (t = [...t].sort((a, v) => {
-          const r = L(a, c), k = L(v, c);
+          const r = z(a, c), k = z(v, c);
           let E = 0;
           return c.colDef.comparator ? E = c.colDef.comparator(r, k) : typeof r == "number" && typeof k == "number" ? E = r - k : E = String(r ?? "").localeCompare(String(k ?? ""), void 0, { numeric: !0 }), o === "asc" ? E : -E;
         }));
@@ -272,23 +272,23 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
     }), K(A, () => {
       m.value = 0;
     });
-    let J = !1, fe = "", xe = 0, be = 0, ce = !1;
+    let J = !1, fe = "", be = 0, ye = 0, ce = !1;
     function Be(t, l) {
       var n;
-      J = !0, fe = t, xe = l, be = ((n = w.value.find((o) => o.colId === t)) == null ? void 0 : n.width) ?? 100, ce = !1;
+      J = !0, fe = t, be = l, ye = ((n = w.value.find((o) => o.colId === t)) == null ? void 0 : n.width) ?? 100, ce = !1;
     }
-    function ye(t) {
+    function Ce(t) {
       if (!J) return;
-      const l = M.value, n = Math.max(30, be + (t.clientX - xe)), o = x.value.filter((a) => a.colId !== fe).reduce((a, v) => a + v.width, 0), c = l - n;
+      const l = M.value, n = Math.max(30, ye + (t.clientX - be)), o = x.value.filter((a) => a.colId !== fe).reduce((a, v) => a + v.width, 0), c = l - n;
       c > 10 && (h[fe] = Math.max(10, Math.round(n * o / c))), H();
     }
-    function Ce() {
+    function Ie() {
       J && (J = !1, ce = !0, i("column-resized"));
     }
-    const V = R(null), z = R(null);
-    let j = null, ve, Ie, X, Q, G;
+    const V = R(null), L = R(null);
+    let j = null, ve, De, X, Q, G;
     function Fe() {
-      !z.value || !V.value || (G = document.createElement("canvas"), j = new W.WebGLRenderer({ canvas: z.value, antialias: !1 }), j.setPixelRatio(1), ve = new W.Scene(), Ie = new W.OrthographicCamera(-1, 1, 1, -1, 0, 1), Q = new W.CanvasTexture(G), Q.minFilter = W.LinearFilter, Q.magFilter = W.LinearFilter, X = new W.ShaderMaterial({
+      !L.value || !V.value || (G = document.createElement("canvas"), j = new W.WebGLRenderer({ canvas: L.value, antialias: !1 }), j.setPixelRatio(1), ve = new W.Scene(), De = new W.OrthographicCamera(-1, 1, 1, -1, 0, 1), Q = new W.CanvasTexture(G), Q.minFilter = W.LinearFilter, Q.magFilter = W.LinearFilter, X = new W.ShaderMaterial({
         uniforms: {
           uTex: { value: Q },
           uStrength: { value: 0 },
@@ -298,9 +298,9 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
         },
         vertexShader: st,
         fragmentShader: ut
-      }), ve.add(new W.Mesh(new W.PlaneGeometry(2, 2), X)), De());
+      }), ve.add(new W.Mesh(new W.PlaneGeometry(2, 2), X)), he());
     }
-    function De() {
+    function he() {
       if (!j || !V.value) return;
       const t = V.value.clientWidth, l = V.value.clientHeight - (e.pagination ? dt : 0);
       !t || !l || (j.setSize(t, l), G.width = t, G.height = l, M.value = t, F.value = l, H());
@@ -325,24 +325,24 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
         selectedCol: ((a = s.value) == null ? void 0 : a.col) ?? -1,
         formatCell: U,
         getCellStyle: ie
-      }), Q.needsUpdate = !0, j.render(ve, Ie);
+      }), Q.needsUpdate = !0, j.render(ve, De);
     }
-    function Le() {
+    function ze() {
       return e.curvature / 45 * 0.55;
     }
-    function he(t) {
-      if (!z.value) return [-1, -1];
-      const l = z.value.getBoundingClientRect();
+    function ge(t) {
+      if (!L.value) return [-1, -1];
+      const l = L.value.getBoundingClientRect();
       return nt(
         t.clientX - l.left,
         t.clientY - l.top,
-        z.value.width,
-        z.value.height,
-        Le()
+        L.value.width,
+        L.value.height,
+        ze()
       );
     }
     let Se = 0;
-    function ze(t) {
+    function Le(t) {
       if (f.value = null, e.pagination) {
         const l = Date.now();
         if (l - Se < 120) return;
@@ -354,7 +354,7 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
     }
     function Ee(t) {
       if (J) return;
-      const [l, n] = he(t);
+      const [l, n] = ge(t);
       if (l < 0) {
         Y.value = -1, H();
         return;
@@ -370,19 +370,19 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
         d.value.length
       );
       if (Y.value = o.area === "body" ? o.rowIdx : -1, o.area === "header" && o.colIdx >= 0) {
-        const c = w.value[o.colIdx], a = me(o.colIdx, w.value);
-        z.value.style.cursor = c && Ae(l, a, c.width) ? "col-resize" : "pointer";
-      } else o.area === "body" ? z.value.style.cursor = "pointer" : z.value.style.cursor = "default";
+        const c = w.value[o.colIdx], a = xe(o.colIdx, w.value);
+        L.value.style.cursor = c && Ae(l, a, c.width) ? "col-resize" : "pointer";
+      } else o.area === "body" ? L.value.style.cursor = "pointer" : L.value.style.cursor = "default";
       H();
     }
     function We() {
       Y.value = -1, H();
     }
     function Oe(t) {
-      const [l, n] = he(t);
+      const [l, n] = ge(t);
       if (!(l < 0 || n >= S))
         for (let o = 0; o < w.value.length; o++) {
-          const c = w.value[o], a = me(o, w.value);
+          const c = w.value[o], a = xe(o, w.value);
           if (c.colDef.resizable !== !1 && Ae(l, a, c.width)) {
             Be(c.colId, t.clientX);
             return;
@@ -396,7 +396,7 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
         return;
       }
       if (J) return;
-      const [l, n] = he(t);
+      const [l, n] = ge(t);
       if (l < 0) {
         f.value = null;
         return;
@@ -412,12 +412,12 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
         d.value.length
       );
       if (o.area === "header" && o.colIdx >= 0) {
-        const r = w.value[o.colIdx], k = me(o.colIdx, w.value);
+        const r = w.value[o.colIdx], k = xe(o.colIdx, w.value);
         r.colDef.filter && at(l, k, r.width) ? f.value === r.colId ? f.value = null : (f.value = r.colId, b.value = (c = p[r.colId]) != null && c.startsWith("__eq__") ? p[r.colId].slice(6) : p[r.colId] ?? "", C.value = { x: Math.max(0, k), y: S }) : r.colDef.sortable !== !1 && (f.value = null, y.value = ((a = y.value) == null ? void 0 : a.colId) === r.colId ? y.value.dir === "asc" ? { colId: r.colId, dir: "desc" } : null : { colId: r.colId, dir: "asc" }, i("sort-changed"));
         return;
       }
       if (f.value = null, o.area === "body" && o.rowIdx >= 0 && o.colIdx >= 0) {
-        s.value = { row: o.rowIdx, col: o.colIdx }, (v = z.value) == null || v.focus();
+        s.value = { row: o.rowIdx, col: o.colIdx }, (v = L.value) == null || v.focus();
         const r = N.value[o.rowIdx], k = w.value[o.colIdx];
         r && k && (i("row-clicked", { data: r, event: t }), i("cell-selected", { data: r, row: o.rowIdx, col: o.colIdx, colId: k.colId }));
       }
@@ -464,7 +464,7 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
           t.preventDefault(), t.ctrlKey || t.metaKey ? (m.value = 0, r(0, 0)) : r(a, 0);
           break;
         case "End":
-          t.preventDefault(), t.ctrlKey || t.metaKey ? (m.value = oe.value - 1, we(() => r(N.value.length - 1, o))) : r(a, o);
+          t.preventDefault(), t.ctrlKey || t.metaKey ? (m.value = oe.value - 1, me(() => r(N.value.length - 1, o))) : r(a, o);
           break;
         case "PageDown":
           t.preventDefault(), E();
@@ -544,6 +544,9 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
 `)], { type: "text/csv" }), a = URL.createObjectURL(c);
         Object.assign(document.createElement("a"), { href: a, download: t }).click(), URL.revokeObjectURL(a);
       },
+      resize() {
+        he();
+      },
       resetColumnState() {
         _.clear();
         for (const l of e.columnDefs)
@@ -557,23 +560,23 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
     };
     K(
       [N, () => d.value, w, $, Y, s],
-      () => we(H)
+      () => me(H)
     ), K(() => e.theme, () => H()), K(() => e.curvature, () => H()), K(() => e.scanlines, () => H()), K(() => e.glow, () => H()), K(s, (t) => {
       if (!t) return;
       const l = N.value[t.row], n = w.value[t.col];
       l && n && i("cell-selected", { data: l, row: t.row, col: t.col, colId: n.colId });
     });
-    let ne = null, ge = 0;
+    let ne = null, pe = 0;
     Ze(() => {
       for (const t of e.columnDefs)
         t.hide && _.add(I(t)), t.sort && !y.value && (y.value = { colId: I(t), dir: t.sort });
-      D.value = e.rowData ?? [], d.value = e.pinnedBottomRowData ?? [], document.addEventListener("click", ke, !0), document.addEventListener("mousemove", ye), document.addEventListener("mouseup", Ce), we(() => {
+      D.value = e.rowData ?? [], d.value = e.pinnedBottomRowData ?? [], document.addEventListener("click", ke, !0), document.addEventListener("mousemove", Ce), document.addEventListener("mouseup", Ie), me(() => {
         Fe(), V.value && (ne = new ResizeObserver(() => {
-          cancelAnimationFrame(ge), ge = requestAnimationFrame(De);
+          cancelAnimationFrame(pe), pe = requestAnimationFrame(he);
         }), ne.observe(V.value)), i("grid-ready", { api: je });
       });
     }), Je(() => {
-      document.removeEventListener("click", ke, !0), document.removeEventListener("mousemove", ye), document.removeEventListener("mouseup", Ce), ne == null || ne.disconnect(), cancelAnimationFrame(ge), j == null || j.dispose();
+      document.removeEventListener("click", ke, !0), document.removeEventListener("mousemove", Ce), document.removeEventListener("mouseup", Ie), ne == null || ne.disconnect(), cancelAnimationFrame(pe), j == null || j.dispose();
     });
     const P = B(() => le[e.theme] ?? le.none), Ge = B(() => ({
       position: "absolute",
@@ -617,10 +620,10 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
       }, [
         ee("canvas", {
           ref_key: "canvasEl",
-          ref: z,
+          ref: L,
           class: "cathode-canvas",
           tabindex: "0",
-          onWheel: Me(ze, ["prevent"]),
+          onWheel: Me(Le, ["prevent"]),
           onMousemove: Ee,
           onMouseleave: We,
           onMousedown: Oe,
@@ -691,7 +694,7 @@ const rt = ["value"], it = ["disabled"], ct = ["disabled"], st = `
   for (const [i, D] of u)
     e[i] = D;
   return e;
-}, gt = /* @__PURE__ */ vt(ft, [["__scopeId", "data-v-dac5d447"]]);
+}, gt = /* @__PURE__ */ vt(ft, [["__scopeId", "data-v-149b3534"]]);
 export {
   gt as CathodeGrid
 };

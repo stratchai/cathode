@@ -79,6 +79,10 @@ export interface GridApi {
         fileName?: string;
     }): void;
     resetColumnState(): void;
+    /** Immediately re-measure the container and resize the WebGL canvas.
+     *  Call this when the parent container is resized programmatically
+     *  (e.g. a draggable panel) so the ResizeObserver delay is bypassed. */
+    resize(): void;
 }
 export interface GridReadyEvent {
     api: GridApi;
