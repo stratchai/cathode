@@ -29,7 +29,7 @@
   height: 100%;
   background: var(--cathode-bg);
   color: var(--cathode-text);
-  font-family: 'Courier New', Courier, monospace;
+  font-family: system-ui, -apple-system, sans-serif;
   font-size: 12px;
   overflow: hidden;
   box-sizing: border-box;
@@ -333,7 +333,7 @@
   --cathode-pinned-bg:   rgba(0,0,0,0.04);
   --cathode-input-bg:    #ffffff;
   --cathode-scrollbar:   #dee2e6;
-  font-family: system-ui, sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 /* Scanlines look bad on light theme — suppress */
 .cathode-theme-paper.cathode-scanlines::after { display: none; }
