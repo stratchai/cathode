@@ -288,7 +288,7 @@
   --cathode-pinned-bg:   rgba(0,0,0,0.5);
   --cathode-input-bg:    #020602;
   --cathode-scrollbar:   #0d2a0d;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 /* Phosphor border glow */
 .cathode-theme-phosphor.cathode-glow {
@@ -311,7 +311,7 @@
   --cathode-pinned-bg:   rgba(0,0,0,0.5);
   --cathode-input-bg:    #040200;
   --cathode-scrollbar:   #2a1500;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 .cathode-theme-amber.cathode-glow {
   box-shadow: inset 0 0 40px rgba(200,140,0,0.07), 0 0 0 1px #2a1500;

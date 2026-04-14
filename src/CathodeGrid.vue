@@ -967,7 +967,7 @@ const filterInputStyle = computed<CSSProperties>(() => ({
   background:  themeC.value.bg,
   border:      `1px solid ${themeC.value.border}`,
   color:       themeC.value.text,
-  fontFamily:  "'Courier New', Courier, monospace",
+  fontFamily:  "system-ui, -apple-system, sans-serif",
   fontSize:    '11px',
   padding:     '3px 7px',
   borderRadius: '2px',
@@ -1082,7 +1082,7 @@ const accentColor = computed(() => themeC.value.accent)
   gap: 10px;
   padding: 3px 12px;
   font-size: 11px;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: system-ui, -apple-system, sans-serif;
   flex-shrink: 0;
 }
 .cathode-pagination button {
@@ -1101,7 +1101,7 @@ const accentColor = computed(() => themeC.value.accent)
 .cathode-page-info   { margin-left: auto; font-size: 10px; opacity: 0.75; }
 .cathode-sel-readout {
   font-size: 10px;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: system-ui, -apple-system, sans-serif;
   opacity: 0.85;
   max-width: 260px;
   overflow: hidden;

@@ -104,7 +104,7 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
     ctx.rect(hx, 0, col.width, HEADER_H)
     ctx.clip()
 
-    ctx.font      = `bold ${HDR_FONT_SIZE}px 'Courier New', Courier, monospace`
+    ctx.font      = `bold ${HDR_FONT_SIZE}px system-ui, -apple-system, sans-serif`
     ctx.fillStyle = hasFilter ? c.accent : c.textHeader
     if (glow) { ctx.shadowBlur = 6; ctx.shadowColor = c.textHeader }
     ctx.fillText(label, hx + 8, HEADER_H / 2)
@@ -113,14 +113,14 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
     // Sort arrow
     if (isSort) {
       const tw = ctx.measureText(label).width
-      ctx.font      = `8px 'Courier New', Courier, monospace`
+      ctx.font      = `8px system-ui, -apple-system, sans-serif`
       ctx.fillStyle = c.accent
       ctx.fillText(opts.sortDir === 'asc' ? '▲' : '▼', hx + 8 + tw + 4, HEADER_H / 2)
     }
 
     // Filter icon
     if (col.colDef.filter) {
-      ctx.font        = `13px 'Courier New', Courier, monospace`
+      ctx.font        = `13px system-ui, -apple-system, sans-serif`
       ctx.fillStyle   = hasFilter ? c.accent : c.textHeader
       ctx.globalAlpha = hasFilter ? 1.0 : 0.38
       ctx.fillText('⌕', hx + col.width - 20, HEADER_H / 2)
@@ -200,7 +200,7 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
       ctx.rect(cx + 1, ry, col.width - 2, rowHeight)
       ctx.clip()
 
-      ctx.font         = `${FONT_SIZE}px 'Courier New', Courier, monospace`
+      ctx.font         = `${FONT_SIZE}px system-ui, -apple-system, sans-serif`
       ctx.fillStyle    = textColor
       ctx.textBaseline = 'middle'
       if (glow) { ctx.shadowBlur = 4; ctx.shadowColor = textColor }
@@ -267,7 +267,7 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
         ctx.rect(cx + 1, ry, col.width - 2, rowHeight)
         ctx.clip()
 
-        ctx.font         = `bold ${FONT_SIZE}px 'Courier New', Courier, monospace`
+        ctx.font         = `bold ${FONT_SIZE}px system-ui, -apple-system, sans-serif`
         ctx.fillStyle    = textColor
         ctx.textBaseline = 'middle'
 
