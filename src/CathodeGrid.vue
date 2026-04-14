@@ -286,12 +286,13 @@ const canvasEl = ref<HTMLCanvasElement | null>(null)
 
 // ── Three.js ───────────────────────────────────────────────────────────────────
 
-let renderer:  THREE.WebGLRenderer | null = null
-let scene:     THREE.Scene
-let camera:    THREE.OrthographicCamera
-let material:  THREE.ShaderMaterial
-let texture:   THREE.CanvasTexture
-let offCanvas: HTMLCanvasElement
+let renderer:    THREE.WebGLRenderer | null = null
+let webglFailed  = false   // true when GPU/sandbox prevents WebGL
+let scene:       THREE.Scene
+let camera:      THREE.OrthographicCamera
+let material:    THREE.ShaderMaterial
+let texture:     THREE.CanvasTexture
+let offCanvas:   HTMLCanvasElement
 
 const VERT = `
   varying vec2 vUv;
@@ -351,8 +352,22 @@ function initThree() {
 
   offCanvas = document.createElement('canvas')
 
-  renderer = new THREE.WebGLRenderer({ canvas: canvasEl.value, antialias: false })
-  renderer.setPixelRatio(1)
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: canvasEl.value, antialias: false })
+  } catch {
+    webglFailed = true
+  }
+  if (!webglFailed && !renderer!.getContext()) {
+    renderer!.dispose()
+    renderer = null
+    webglFailed = true
+  }
+  if (webglFailed) {
+    // No WebGL — fall back to direct 2D blit; still set up offCanvas dimensions
+    sizeToContainer()
+    return
+  }
+  renderer!.setPixelRatio(1)
 
   scene  = new THREE.Scene()
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
@@ -382,19 +397,27 @@ function initThree() {
 const PAGINATION_H = 28
 
 function sizeToContainer() {
-  if (!renderer || !wrapEl.value) return
+  if (!wrapEl.value) return
+  if (!renderer && !webglFailed) return
   const W = wrapEl.value.clientWidth
   const H = wrapEl.value.clientHeight - (props.pagination ? PAGINATION_H : 0)
   if (!W || !H) return
 
-  // Update the WebGL pixel buffer AND the canvas CSS size together.
-  // Passing true (default) means Three.js sets canvas.style.width/height explicitly,
-  // so the browser never has a chance to CSS-stretch the old buffer during resize.
-  renderer.setSize(W, H)
   offCanvas.width  = W
   offCanvas.height = H
   canvasW.value    = W
   canvasH.value    = H
+
+  if (renderer) {
+    // Update the WebGL pixel buffer AND the canvas CSS size together.
+    renderer.setSize(W, H)
+  } else if (canvasEl.value) {
+    // WebGL fallback: size the canvas element directly
+    canvasEl.value.width  = W
+    canvasEl.value.height = H
+    canvasEl.value.style.width  = W + 'px'
+    canvasEl.value.style.height = H + 'px'
+  }
 
   redraw()
 }
@@ -402,7 +425,34 @@ function sizeToContainer() {
 // ── Redraw ────────────────────────────────────────────────────────────────────
 
 function redraw() {
-  if (!renderer || !material || !texture || !offCanvas.width) return
+  if (!offCanvas?.width) return
+
+  // WebGL fallback: draw offCanvas directly to the visible canvas via 2D blit
+  if (webglFailed) {
+    if (!canvasEl.value) return
+    drawGrid(offCanvas, {
+      cols:        displayCols.value,
+      rows:        pagedRows.value,
+      pinnedRows:  localPinned.value,
+      rowHeight:   props.rowHeight,
+      scrollY:     scrollY.value,
+      theme:       props.theme,
+      glow:        false,
+      sortColId:   sortState.value?.colId ?? null,
+      sortDir:     sortState.value?.dir   ?? null,
+      colFilters,
+      hoveredRow:  hoveredRow.value,
+      selectedRow: selectedCell.value?.row ?? -1,
+      selectedCol: selectedCell.value?.col ?? -1,
+      formatCell,
+      getCellStyle,
+    })
+    const ctx2d = canvasEl.value.getContext('2d')
+    if (ctx2d) ctx2d.drawImage(offCanvas, 0, 0)
+    return
+  }
+
+  if (!renderer || !material || !texture) return
 
   const themeColors = THEME_COLORS[props.theme] ?? THEME_COLORS['none']
   const isPaper     = props.theme === 'paper'
