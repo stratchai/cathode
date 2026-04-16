@@ -605,7 +605,8 @@ function onCanvasClick(e: MouseEvent) {
     const clx = colLeft(hit.colIdx, displayCols.value)
 
     if (col.colDef.filter && isOnFilterIcon(cx, clx, col.width)) {
-      // Toggle filter popup
+      // Toggle filter popup — stop propagation so onDocClick doesn't immediately close it
+      e.stopPropagation()
       if (activeFilter.value === col.colId) {
         activeFilter.value = null
       } else {
