@@ -906,6 +906,20 @@ watch(selectedCell, (sc) => {
 let resizeObserver: ResizeObserver | null = null
 let resizeRaf      = 0   // requestAnimationFrame handle for resize batching
 
+// ── WebGL context loss recovery ───────────────────────────────────────────────
+
+function onContextLost(e: Event) {
+  e.preventDefault()   // required to allow context restoration
+}
+
+function onContextRestored() {
+  // Dispose the dead renderer and rebuild from scratch on the same canvas
+  renderer?.dispose()
+  renderer   = null
+  webglFailed = false
+  initThree()
+}
+
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 onMounted(() => {
@@ -923,6 +937,10 @@ onMounted(() => {
 
   nextTick(() => {
     initThree()
+    if (canvasEl.value) {
+      canvasEl.value.addEventListener('webglcontextlost',     onContextLost)
+      canvasEl.value.addEventListener('webglcontextrestored', onContextRestored)
+    }
     if (wrapEl.value) {
       resizeObserver = new ResizeObserver(() => {
         cancelAnimationFrame(resizeRaf)
@@ -938,6 +956,8 @@ onUnmounted(() => {
   document.removeEventListener('click',     onDocClick,       true)
   document.removeEventListener('mousemove', onGlobalMouseMove)
   document.removeEventListener('mouseup',   onGlobalMouseUp)
+  canvasEl.value?.removeEventListener('webglcontextlost',     onContextLost)
+  canvasEl.value?.removeEventListener('webglcontextrestored', onContextRestored)
   resizeObserver?.disconnect()
   cancelAnimationFrame(resizeRaf)
   renderer?.dispose()
