@@ -310,9 +310,9 @@ function onFocus()    { bringToFront(props.id) }
   z-index: 39;
 }
 
-/* suppress effects in light/paper theme */
-:global(:root.cathode-light) .cc::after  { display: none; }
-:global(:root.cathode-light) .cc::before { display: none; }
+/* suppress effects in light/paper theme — use cc-light class (avoids :global() compiler bug) */
+.cc-light::after  { display: none; }
+.cc-light::before { display: none; }
 
 /* canvas-based slot (e.g. CathodeGrid) renders its own WebGL effects — skip CSS overlays */
 .cc-has-canvas::after  { display: none; }

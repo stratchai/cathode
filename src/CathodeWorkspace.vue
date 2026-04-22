@@ -157,7 +157,7 @@ function titleFor(id: string): string {
   pointer-events: none;
 }
 
-:global(:root.cathode-light) .cathode-workspace::before { opacity: 0.06; }
+.cathode-workspace-light::before { opacity: 0.06; }
 
 /* ── Workspace toolbar ──────────────────────────────────────── */
 .ws-toolbar {

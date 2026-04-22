@@ -939,7 +939,7 @@ const nl = { class: "ws-toolbar" }, al = {
       })
     ], 544));
   }
-}), yl = /* @__PURE__ */ Ge(sl, [["__scopeId", "data-v-331761a9"]]), cl = ["id"], ul = { class: "cc-title" }, dl = {
+}), yl = /* @__PURE__ */ Ge(sl, [["__scopeId", "data-v-5838d04b"]]), cl = ["id"], ul = { class: "cc-title" }, dl = {
   key: 0,
   class: "cc-size-badge"
 }, vl = { class: "cc-controls" }, fl = ["title"], hl = { class: "cc-body" }, ml = 200, gl = 80, vt = 60, pl = /* @__PURE__ */ qe({
@@ -1112,7 +1112,7 @@ const nl = { class: "ws-toolbar" }, al = {
       }, null, 32)) : ce("", !0)
     ], 46, cl)) : ce("", !0);
   }
-}), Ml = /* @__PURE__ */ Ge(pl, [["__scopeId", "data-v-008a926a"]]);
+}), Ml = /* @__PURE__ */ Ge(pl, [["__scopeId", "data-v-a6501b86"]]);
 export {
   Ml as CathodeContainer,
   xl as CathodeGrid,
