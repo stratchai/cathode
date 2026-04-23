@@ -378,7 +378,7 @@ const FRAG = `
     vec2 uv = barrel(vUv);
 
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
-      gl_FragColor = vec4(uBezel, 1.0);
+      gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
       return;
     }
 
@@ -404,7 +404,7 @@ function initThree() {
   offCanvas = document.createElement('canvas')
 
   try {
-    renderer = new THREE.WebGLRenderer({ canvas: canvasEl.value, antialias: false })
+    renderer = new THREE.WebGLRenderer({ canvas: canvasEl.value, antialias: false, alpha: true })
   } catch {
     webglFailed = true
   }
@@ -419,6 +419,7 @@ function initThree() {
     return
   }
   renderer!.setPixelRatio(1)
+  renderer!.setClearColor(0x000000, 0)
 
   scene  = new THREE.Scene()
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
@@ -438,6 +439,7 @@ function initThree() {
     },
     vertexShader:   VERT,
     fragmentShader: FRAG,
+    transparent:    true,
   })
 
   scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material))

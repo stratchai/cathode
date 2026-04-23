@@ -22,7 +22,7 @@ export interface GridColors {
 
 export const THEME_COLORS: Record<string, GridColors> = {
   none: {
-    bg: '#111827', headerBg: '#12122a',
+    bg: 'rgba(17,24,39,0.82)', headerBg: 'rgba(18,18,42,0.88)',
     text: '#e8f2ff', textHeader: '#6a90b8', border: '#2a3a50',
     accent: '#40a0f0', rowAlt: 'rgba(255,255,255,0.018)',
   },
@@ -80,6 +80,7 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
   const { cols, rows, pinnedRows, rowHeight, scrollY, scrollX, glow } = opts
 
   // ── Background ──────────────────────────────────────────────────────────────
+  ctx.clearRect(0, 0, W, H)
   ctx.fillStyle = c.bg
   ctx.fillRect(0, 0, W, H)
 
