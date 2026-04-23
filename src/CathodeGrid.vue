@@ -622,9 +622,8 @@ function onCanvasMouseDown(e: MouseEvent) {
   if (cx < 0) return
 
   if (cy >= HEADER_H) {
-    // Body click — start pan and stop event from bubbling to CathodeContainer
-    // (otherwise the container would interpret it as a drag/resize gesture)
-    e.stopPropagation()
+    // Body click — start pan. Allow event to bubble so CathodeContainer can
+    // call bringToFront; drag only starts from the title bar so there's no conflict.
     panActive       = true
     panMoved        = false
     panStartX       = e.clientX
