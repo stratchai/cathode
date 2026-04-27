@@ -31,10 +31,23 @@ function load(initial: Record<string, ContainerState>, storageKey = 'cathode.lay
     const saved = localStorage.getItem(lsKey)
     if (saved) {
       containers.value = JSON.parse(saved)
+      // Sync maxZ to whatever the persisted layout already has, otherwise
+      // bringToFront() will hand out values lower than existing zIndices and
+      // a maximized container can stay behind something previously focused.
+      syncMaxZ()
       return
     }
   } catch { /* ignore */ }
   containers.value = { ...initial }
+  syncMaxZ()
+}
+
+function syncMaxZ() {
+  let m = 10
+  for (const c of Object.values(containers.value)) {
+    if (typeof c?.zIndex === 'number' && c.zIndex > m) m = c.zIndex
+  }
+  maxZ = m
 }
 
 function save() {
