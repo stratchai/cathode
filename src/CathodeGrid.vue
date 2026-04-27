@@ -456,6 +456,12 @@ function sizeToContainer() {
   const H = wrapEl.value.clientHeight - (props.pagination ? PAGINATION_H : 0)
   if (!W || !H) return
 
+  // If offCanvas dimensions change, the CanvasTexture's GPU storage is stale —
+  // Three.js will try to texSubImage2D into the old (smaller) allocation and
+  // the driver throws GL_INVALID_VALUE: 'Offset overflows texture dimensions',
+  // producing garbled pixel output. Dispose the texture so Three.js
+  // reallocates GPU storage on the next render.
+  const sizeChanged = offCanvas.width !== W || offCanvas.height !== H
   offCanvas.width  = W
   offCanvas.height = H
   canvasW.value    = W
@@ -464,6 +470,14 @@ function sizeToContainer() {
   scrollY.value    = Math.max(0, Math.min(maxScrollY.value, scrollY.value))
 
   if (renderer) {
+    if (sizeChanged && texture) {
+      texture.dispose()
+      // Re-create so Three.js allocates fresh GPU storage at the new size
+      texture = new THREE.CanvasTexture(offCanvas)
+      texture.minFilter = THREE.LinearFilter
+      texture.magFilter = THREE.LinearFilter
+      if (material) material.uniforms.uTex.value = texture
+    }
     // Track DPR so zooming the browser page keeps the canvas crisp.
     renderer.setPixelRatio(window.devicePixelRatio || 1)
     // Update the WebGL pixel buffer AND the canvas CSS size together.
