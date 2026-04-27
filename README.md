@@ -176,6 +176,27 @@ npm run build        # library → dist/
 npm run typecheck
 ```
 
+## Regression tests
+
+Headless Playwright suite that drives the demo. Each test exists to lock
+in a specific bug class — when a fix lands, a test goes with it. Run on
+every change before pushing:
+
+```bash
+npm test             # headless
+npm run test:headed  # watch the browser
+npm run test:debug   # step through with inspector (PWDEBUG=1)
+```
+
+The current suite covers:
+
+| Test | Bug class it guards |
+|------|--------------------|
+| `grid-resize.spec.ts` | `GL_INVALID_VALUE: glTexSubImage2DRobustANGLE: Offset overflows texture dimensions` (CanvasTexture not reallocated when offCanvas grows). Sweeps viewport sizes through grow + shrink cycles, asserts the GL warning never appears. |
+
+The `tests/_helpers.ts` `collectConsoleErrors` helper is the reusable
+pattern for new tests — subscribe at start, sweep the page, assert at end.
+
 ---
 
 ## License
