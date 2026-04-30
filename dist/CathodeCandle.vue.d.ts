@@ -1,4 +1,4 @@
-import { type OHLCVCandle } from './CanvasKLine';
+import { type OHLCVCandle } from './CanvasCandle';
 import './cathode.css';
 type __VLS_Props = {
     candles: OHLCVCandle[];

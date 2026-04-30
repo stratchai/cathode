@@ -5,9 +5,9 @@ import {
 import type { CSSProperties, Ref } from 'vue'
 import * as THREE from 'three'
 import {
-  drawKLine, KLINE_THEME_COLORS, DEFAULT_VOLUME_FRACTION,
+  drawCandle, CANDLE_THEME_COLORS, DEFAULT_VOLUME_FRACTION,
   type OHLCVCandle,
-} from './CanvasKLine'
+} from './CanvasCandle'
 import './cathode.css'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ const canvasH = ref(0)
 //            Anchored to the right edge by computeVisibleWindow.
 // zoomLevel — multiplier on props.slotW; wheel adjusts it. 1.0 = base zoom.
 // hover    — { x, y } in canvas coords, null when not over the chart.
-//            Drives the crosshair overlay drawn in drawKLine.
+//            Drives the crosshair overlay drawn in drawCandle.
 
 const scrollX   = ref(0)
 const zoomLevel = ref(1)
@@ -211,7 +211,7 @@ function redraw() {
 
   if (webglFailed) {
     if (!canvasEl.value) return
-    drawKLine(offCanvas, {
+    drawCandle(offCanvas, {
       candles:        props.candles,
       slotW:          effectiveSlotW.value,
       scrollX:        scrollX.value,
@@ -234,7 +234,7 @@ function redraw() {
   material.uniforms.uScanlines.value = (props.scanlines && !isPaper) ? 1.0 : 0.0
   material.uniforms.uVignette.value  = isPaper ? 0.0 : 1.0
 
-  drawKLine(offCanvas, {
+  drawCandle(offCanvas, {
     candles:        props.candles,
     slotW:          effectiveSlotW.value,
     scrollX:        scrollX.value,
@@ -424,7 +424,7 @@ onUnmounted(() => {
 
 // ── Computed styles ───────────────────────────────────────────────────────────
 
-const themeC = computed(() => KLINE_THEME_COLORS[props.theme] ?? KLINE_THEME_COLORS['none'])
+const themeC = computed(() => CANDLE_THEME_COLORS[props.theme] ?? CANDLE_THEME_COLORS['none'])
 
 const wrapStyle = computed<CSSProperties>(() => ({
   background: themeC.value.bg,
@@ -432,10 +432,10 @@ const wrapStyle = computed<CSSProperties>(() => ({
 </script>
 
 <template>
-  <div ref="wrapEl" class="cathode-kline-wrap" :style="wrapStyle">
+  <div ref="wrapEl" class="cathode-candle-wrap" :style="wrapStyle">
     <canvas
       ref="canvasEl"
-      class="cathode-kline-canvas"
+      class="cathode-candle-canvas"
       @wheel.prevent="onCanvasWheel"
       @mousedown="onCanvasMouseDown"
       @mousemove="onCanvasMouseMove"
@@ -445,7 +445,7 @@ const wrapStyle = computed<CSSProperties>(() => ({
 </template>
 
 <style scoped>
-.cathode-kline-wrap {
+.cathode-candle-wrap {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -453,7 +453,7 @@ const wrapStyle = computed<CSSProperties>(() => ({
   height: 100%;
   overflow: hidden;
 }
-.cathode-kline-canvas {
+.cathode-candle-canvas {
   /* Renderer.setSize() owns inline width/height. */
   display: block;
   outline: none;

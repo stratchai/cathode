@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { collectConsoleErrors } from './_helpers';
 
 /**
- * CathodeKLine regression tests — same shape as CathodeGrid / CathodeLog
+ * CathodeCandle regression tests — same shape as CathodeGrid / CathodeLog
  * (Three.js + CanvasTexture + barrel shader). PR 1 only renders candles +
  * wicks + volume; zoom/pan/axes/crosshair come in PR 2.
  *
@@ -15,13 +15,13 @@ import { collectConsoleErrors } from './_helpers';
 
 const BLANK_FLOOR = 3000;
 
-test.describe('CathodeKLine', () => {
+test.describe('CathodeCandle', () => {
 
-  test('renders the KLine tab without console errors', async ({ page }) => {
+  test('renders the Candle tab without console errors', async ({ page }) => {
     const watch = collectConsoleErrors(page);
 
     await page.goto('/');
-    await page.getByRole('button', { name: /^KLine$/ }).click();
+    await page.getByRole('button', { name: /^Candle$/ }).click();
 
     const canvas = page.locator('.tab-content:visible canvas').first();
     await canvas.waitFor({ state: 'visible' });
@@ -29,16 +29,16 @@ test.describe('CathodeKLine', () => {
 
     // Canvas has rendered content (candles + wicks + volume)
     const bytes = (await canvas.screenshot()).length;
-    expect(bytes, `KLine canvas appears blank (${bytes} bytes)`).toBeGreaterThan(BLANK_FLOOR);
+    expect(bytes, `Candle canvas appears blank (${bytes} bytes)`).toBeGreaterThan(BLANK_FLOOR);
 
     expect(watch.entries).toEqual([]);
   });
 
-  test('viewport sweep: zero GL warnings on the standalone KLine tab', async ({ page }) => {
+  test('viewport sweep: zero GL warnings on the standalone Candle tab', async ({ page }) => {
     const watch = collectConsoleErrors(page);
 
     await page.goto('/');
-    await page.getByRole('button', { name: /^KLine$/ }).click();
+    await page.getByRole('button', { name: /^Candle$/ }).click();
     await page.locator('.tab-content:visible canvas').first().waitFor({ state: 'visible' });
     await page.waitForTimeout(400);
 
@@ -61,11 +61,11 @@ test.describe('CathodeKLine', () => {
     ).toEqual([]);
   });
 
-  test('curvature drag does not blank the KLine canvas', async ({ page }) => {
+  test('curvature drag does not blank the Candle canvas', async ({ page }) => {
     const watch = collectConsoleErrors(page);
 
     await page.goto('/');
-    await page.getByRole('button', { name: /^KLine$/ }).click();
+    await page.getByRole('button', { name: /^Candle$/ }).click();
     const canvas = page.locator('.tab-content:visible canvas').first();
     await canvas.waitFor({ state: 'visible' });
     await page.waitForTimeout(400);
@@ -74,7 +74,7 @@ test.describe('CathodeKLine', () => {
       return (await canvas.screenshot()).length;
     }
 
-    expect(await bytes(), 'pre-drag KLine canvas appears blank').toBeGreaterThan(BLANK_FLOOR);
+    expect(await bytes(), 'pre-drag Candle canvas appears blank').toBeGreaterThan(BLANK_FLOOR);
 
     // Wire a context-loss listener — same instrumentation as the log test
     await page.evaluate(() => {
@@ -109,7 +109,7 @@ test.describe('CathodeKLine', () => {
     const lossCount = await page.evaluate(() => (window as any).__klineLossCount ?? 0);
     expect(lossCount, `${lossCount} WebGL context-loss events during curvature drag`).toBe(0);
 
-    expect(await bytes(), 'KLine canvas blanked after curvature drag').toBeGreaterThan(BLANK_FLOOR);
+    expect(await bytes(), 'Candle canvas blanked after curvature drag').toBeGreaterThan(BLANK_FLOOR);
     expect(watch.entries).toEqual([]);
   });
 
@@ -118,7 +118,7 @@ test.describe('CathodeKLine', () => {
   test('mouse wheel zoom changes the rendered canvas content', async ({ page }) => {
     const watch = collectConsoleErrors(page);
     await page.goto('/');
-    await page.getByRole('button', { name: /^KLine$/ }).click();
+    await page.getByRole('button', { name: /^Candle$/ }).click();
     const canvas = page.locator('.tab-content:visible canvas').first();
     await canvas.waitFor({ state: 'visible' });
     await page.waitForTimeout(400);
@@ -148,7 +148,7 @@ test.describe('CathodeKLine', () => {
   test('click-drag pan scrolls the candle window', async ({ page }) => {
     const watch = collectConsoleErrors(page);
     await page.goto('/');
-    await page.getByRole('button', { name: /^KLine$/ }).click();
+    await page.getByRole('button', { name: /^Candle$/ }).click();
     const canvas = page.locator('.tab-content:visible canvas').first();
     await canvas.waitFor({ state: 'visible' });
     await page.waitForTimeout(400);
@@ -180,7 +180,7 @@ test.describe('CathodeKLine', () => {
   test('crosshair + axis labels render under hover', async ({ page }) => {
     const watch = collectConsoleErrors(page);
     await page.goto('/');
-    await page.getByRole('button', { name: /^KLine$/ }).click();
+    await page.getByRole('button', { name: /^Candle$/ }).click();
     const canvas = page.locator('.tab-content:visible canvas').first();
     await canvas.waitFor({ state: 'visible' });
     await page.waitForTimeout(400);

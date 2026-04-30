@@ -75,12 +75,13 @@ the title bar + drag handles, NOT a separate component.
 
 ---
 
-## Phase 3 — CathodeKLine  ← in progress
+## Phase 3 — CathodeCandle  ← in progress
 
 A native canvas OHLCV candlestick chart with the full WebGL shader pipeline
 (barrel distortion, scanlines, glow) — the same architecture as CathodeGrid
-and CathodeLog. Component renamed from "CurvedKLine" → "CathodeKLine" for
-naming consistency.
+and CathodeLog. Originally drafted as "CurvedKLine" then "CathodeKLine"
+(transliterated from Chinese trading-platform jargon); renamed to
+**CathodeCandle** on 2026-04-30 for clarity in English contexts.
 
 > **Why native canvas and not a chart library wrapper?**
 > Existing libraries (lightweight-charts, klinechart) render to their own
@@ -91,10 +92,10 @@ naming consistency.
 
 | # | Item | Status |
 |---|------|--------|
-| 1 | `OHLCVCandle` type + `KLineColors` palette + `KLINE_THEME_COLORS` for none/paper/phosphor/amber | ✓ done |
-| 2 | `drawKLine` pure renderer — candles + wicks + volume bars | ✓ done |
-| 3 | `CathodeKLine.vue` Vue wrapper — Three.js + barrel-shader pipeline (mirrors CathodeLog) | ✓ done |
-| 4 | Demo KLine tab + 300-bar synthetic OHLCV generator | ✓ done |
+| 1 | `OHLCVCandle` type + `CandleColors` palette + `CANDLE_THEME_COLORS` for none/paper/phosphor/amber | ✓ done |
+| 2 | `drawCandle` pure renderer — candles + wicks + volume bars | ✓ done |
+| 3 | `CathodeCandle.vue` Vue wrapper — Three.js + barrel-shader pipeline (mirrors CathodeLog) | ✓ done |
+| 4 | Demo Candle tab + 300-bar synthetic OHLCV generator | ✓ done |
 | 5 | Playwright suite: render smoke + viewport sweep + curvature drag | ✓ done (3 tests) |
 | 6 | Index exports for component + types | ✓ done |
 
@@ -113,14 +114,14 @@ naming consistency.
 
 | # | Item | Notes |
 |---|------|-------|
-| 1 | Replace dashboard's klinecharts-based ChartPanel with CathodeKLine | |
+| 1 | Replace dashboard's klinecharts-based ChartPanel with CathodeCandle | |
 | 2 | Verify trade markers still surface (entry/exit dots overlaid on candles) | |
 | 3 | Verify focused-product switching repopulates candles correctly | |
 | 4 | Verify live candle stream updates push the right edge | |
 | 5 | Drop the `klinecharts` dep from dashboard once parity is confirmed | |
 
 ### Phase 3 → done when
-- CathodeKLine exported from cathode index
+- CathodeCandle exported from cathode index
 - ChartPanel in dashboard uses it (klinecharts dep removed)
 - Zoom, pan, crosshair all working
 - WebGL fallback (2D blit) works as it does for CathodeGrid / CathodeLog

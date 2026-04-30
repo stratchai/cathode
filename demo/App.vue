@@ -2,17 +2,17 @@
 import { ref, computed, watch } from 'vue'
 import CathodeGrid      from '../src/CathodeGrid.vue'
 import CathodeLog       from '../src/CathodeLog.vue'
-import CathodeKLine     from '../src/CathodeKLine.vue'
+import CathodeCandle     from '../src/CathodeCandle.vue'
 import CathodeWorkspace from '../src/CathodeWorkspace.vue'
 import CathodeContainer from '../src/CathodeContainer.vue'
 import { buildDefaultLayout } from '../src/useCathodeLayout'
 import type { ColDef, GridApi } from '../src/types'
 import type { ContainerState } from '../src/useCathodeLayout'
 import type { LogEntry } from '../src/CanvasLog'
-import type { OHLCVCandle } from '../src/CanvasKLine'
+import type { OHLCVCandle } from '../src/CanvasCandle'
 
 // ── Shared state ──────────────────────────────────────────────────────────────
-type DemoTab = 'grid' | 'workspace' | 'log' | 'kline'
+type DemoTab = 'grid' | 'workspace' | 'log' | 'candle'
 const activeTab = ref<DemoTab>('workspace')
 
 type Theme = 'none' | 'phosphor' | 'amber' | 'paper'
@@ -240,7 +240,7 @@ const LOG_TEMPLATES: Array<{ level: LogEntry['level']; text: string }> = [
 
 const logEntries = ref<LogEntry[]>([])
 
-// ── KLine tab — sample OHLCV candles ──────────────────────────────────────────
+// ── Candle tab — sample OHLCV candles ──────────────────────────────────────────
 // Synthetic random walk with gentle drift; large enough to test horizontal scroll.
 function generateOHLCV(n: number): OHLCVCandle[] {
   const out: OHLCVCandle[] = []
@@ -259,7 +259,7 @@ function generateOHLCV(n: number): OHLCVCandle[] {
   return out
 }
 
-const klineCandles = ref<OHLCVCandle[]>(generateOHLCV(300))
+const demoCandles = ref<OHLCVCandle[]>(generateOHLCV(300))
 function seedLogEntries() {
   const out: LogEntry[] = []
   const base = Date.now() - 1000 * 60 * 30
@@ -290,8 +290,8 @@ seedLogEntries()
         <button :class="['tab-btn', { active: activeTab === 'log' }]" @click="activeTab = 'log'">
           Log
         </button>
-        <button :class="['tab-btn', { active: activeTab === 'kline' }]" @click="activeTab = 'kline'">
-          KLine
+        <button :class="['tab-btn', { active: activeTab === 'candle' }]" @click="activeTab = 'candle'">
+          Candle
         </button>
       </div>
 
@@ -351,10 +351,10 @@ seedLogEntries()
       />
     </div>
 
-    <!-- ── KLine tab — OHLCV candlestick chart with the barrel pipeline ─── -->
-    <div v-show="activeTab === 'kline'" class="tab-content">
-      <CathodeKLine
-        :candles="klineCandles"
+    <!-- ── Candle tab — OHLCV candlestick chart with the barrel pipeline ─── -->
+    <div v-show="activeTab === 'candle'" class="tab-content">
+      <CathodeCandle
+        :candles="demoCandles"
         :theme="theme"
         :curvature="curvature"
         :scanlines="scanlines"

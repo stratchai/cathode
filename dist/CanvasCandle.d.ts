@@ -1,5 +1,5 @@
 /**
- * CanvasKLine.ts — canvas2d OHLCV candlestick renderer for cathode
+ * CanvasCandle.ts — canvas2d OHLCV candlestick renderer for cathode
  *
  * Draws candles + wicks + volume bars to an HTMLCanvasElement. The canvas
  * is fed to the same THREE.CanvasTexture + barrel-distortion shader as
@@ -24,7 +24,49 @@ export interface OHLCVCandle {
     close: number;
     volume: number;
 }
-export interface KLineColors {
+/** Single-line overlay (e.g. fast EMA, slow EMA, SMA50, midline). */
+export interface PriceOverlayLine {
+    kind: 'line';
+    /** y-values aligned to candles[] by index. NaN = gap. */
+    data: number[];
+    color: string;
+    lineWidth?: number;
+    /** Dashed line if true (e.g. for indicator midline). */
+    dashed?: boolean;
+    /** Optional label — used for legend / hover (PR3+). */
+    label?: string;
+}
+/** Two-line band overlay (e.g. Bollinger Bands, Donchian Channel, Keltner). */
+export interface PriceOverlayBand {
+    kind: 'band';
+    /** Upper edge values, aligned to candles[]. NaN = gap. */
+    upper: number[];
+    lower: number[];
+    /** Optional middle line (e.g. Bollinger SMA20). */
+    middle?: number[];
+    color: string;
+    /** 0..1 fill alpha for the band area. Default 0.08. */
+    fillAlpha?: number;
+    /** Render the middle line as dashed (default true). */
+    middleDashed?: boolean;
+    label?: string;
+}
+export type PriceOverlay = PriceOverlayLine | PriceOverlayBand;
+/**
+ * Triangle annotation at a (timestamp, price) point on the price pane.
+ * Resolved to the nearest candle by start timestamp; if no candle within
+ * one slot duration matches, the marker is dropped silently.
+ */
+export interface TradeMarker {
+    timestamp: number;
+    price: number;
+    kind: 'entry' | 'exit';
+    /** Optional override colour; defaults to theme entry/exit colours. */
+    color?: string;
+    /** Optional label — drawn next to the marker (PR3+). */
+    label?: string;
+}
+export interface CandleColors {
     bg: string;
     /** Body fill for bullish candles (close ≥ open). */
     candleBull: string;
@@ -42,8 +84,11 @@ export interface KLineColors {
     text: string;
     /** Highlight (e.g. crosshair, selected candle). */
     accent: string;
+    /** Default trade-marker colours when not overridden by the marker itself. */
+    markerEntry: string;
+    markerExit: string;
 }
-export declare const KLINE_THEME_COLORS: Record<string, KLineColors>;
+export declare const CANDLE_THEME_COLORS: Record<string, CandleColors>;
 /** Default split — top portion is price, bottom is volume. 0..1. */
 export declare const DEFAULT_VOLUME_FRACTION = 0.18;
 /** Pixel padding around the chart inside the canvas. */
@@ -95,7 +140,7 @@ export declare function computePaneLayout(canvasH: number, volumeFraction: numbe
 export declare function priceToY(price: number, bounds: PriceBounds, y0: number, y1: number): number;
 /** Map a candle index to the centre x-pixel of its slot. */
 export declare function indexToX(idx: number, firstIdx: number, slotW: number): number;
-export interface DrawKLineOpts {
+export interface DrawCandleOpts {
     candles: OHLCVCandle[];
     /** Pixel width per candle slot (body + spacing). Driven by zoom level. */
     slotW: number;
@@ -111,4 +156,4 @@ export interface DrawKLineOpts {
         y: number;
     } | null;
 }
-export declare function drawKLine(canvas: HTMLCanvasElement, opts: DrawKLineOpts): void;
+export declare function drawCandle(canvas: HTMLCanvasElement, opts: DrawCandleOpts): void;

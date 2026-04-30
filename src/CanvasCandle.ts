@@ -1,5 +1,5 @@
 /**
- * CanvasKLine.ts — canvas2d OHLCV candlestick renderer for cathode
+ * CanvasCandle.ts — canvas2d OHLCV candlestick renderer for cathode
  *
  * Draws candles + wicks + volume bars to an HTMLCanvasElement. The canvas
  * is fed to the same THREE.CanvasTexture + barrel-distortion shader as
@@ -28,9 +28,65 @@ export interface OHLCVCandle {
   volume: number
 }
 
+// ── Price-pane overlays ──────────────────────────────────────────────────────
+//
+// Generic rendering primitives for indicator series drawn over the candle
+// chart. Cathode does NOT compute indicators — consumers (e.g. dashboard)
+// pass precomputed series in `data` arrays aligned to `candles` by index.
+// Use NaN for points where the indicator is undefined (e.g. the first 19
+// values of a 20-period SMA).
+
+/** Single-line overlay (e.g. fast EMA, slow EMA, SMA50, midline). */
+export interface PriceOverlayLine {
+  kind:       'line'
+  /** y-values aligned to candles[] by index. NaN = gap. */
+  data:       number[]
+  color:      string
+  lineWidth?: number
+  /** Dashed line if true (e.g. for indicator midline). */
+  dashed?:    boolean
+  /** Optional label — used for legend / hover (PR3+). */
+  label?:     string
+}
+
+/** Two-line band overlay (e.g. Bollinger Bands, Donchian Channel, Keltner). */
+export interface PriceOverlayBand {
+  kind:           'band'
+  /** Upper edge values, aligned to candles[]. NaN = gap. */
+  upper:          number[]
+  lower:          number[]
+  /** Optional middle line (e.g. Bollinger SMA20). */
+  middle?:        number[]
+  color:          string
+  /** 0..1 fill alpha for the band area. Default 0.08. */
+  fillAlpha?:     number
+  /** Render the middle line as dashed (default true). */
+  middleDashed?:  boolean
+  label?:         string
+}
+
+export type PriceOverlay = PriceOverlayLine | PriceOverlayBand
+
+// ── Trade markers ────────────────────────────────────────────────────────────
+
+/**
+ * Triangle annotation at a (timestamp, price) point on the price pane.
+ * Resolved to the nearest candle by start timestamp; if no candle within
+ * one slot duration matches, the marker is dropped silently.
+ */
+export interface TradeMarker {
+  timestamp: number
+  price:     number
+  kind:      'entry' | 'exit'
+  /** Optional override colour; defaults to theme entry/exit colours. */
+  color?:    string
+  /** Optional label — drawn next to the marker (PR3+). */
+  label?:    string
+}
+
 // ── Theme palettes ────────────────────────────────────────────────────────────
 
-export interface KLineColors {
+export interface CandleColors {
   bg:           string
   /** Body fill for bullish candles (close ≥ open). */
   candleBull:   string
@@ -48,58 +104,69 @@ export interface KLineColors {
   text:         string
   /** Highlight (e.g. crosshair, selected candle). */
   accent:       string
+  /** Default trade-marker colours when not overridden by the marker itself. */
+  markerEntry:  string
+  markerExit:   string
 }
 
-export const KLINE_THEME_COLORS: Record<string, KLineColors> = {
+export const CANDLE_THEME_COLORS: Record<string, CandleColors> = {
   none: {
     // bg fully transparent so the parent (glass CathodeContainer) shows
     // through. Same propagation pattern as CanvasGrid / CanvasLog `none`.
-    bg:         'rgba(0,0,0,0)',
-    candleBull: '#26a69a',
-    candleBear: '#ef5350',
-    wickBull:   '#26a69a',
-    wickBear:   '#ef5350',
-    volumeBull: 'rgba(38,166,154,0.45)',
-    volumeBear: 'rgba(239,83,80,0.45)',
-    gridline:   'rgba(255,255,255,0.06)',
-    text:       '#c0d0e0',
-    accent:     '#40a0f0',
+    bg:          'rgba(0,0,0,0)',
+    candleBull:  '#26a69a',
+    candleBear:  '#ef5350',
+    wickBull:    '#26a69a',
+    wickBear:    '#ef5350',
+    volumeBull:  'rgba(38,166,154,0.45)',
+    volumeBear:  'rgba(239,83,80,0.45)',
+    gridline:    'rgba(255,255,255,0.06)',
+    text:        '#c0d0e0',
+    accent:      '#40a0f0',
+    markerEntry: '#00cc55',
+    markerExit:  '#e74c3c',
   },
   paper: {
-    bg:         'rgba(0,0,0,0)',
-    candleBull: '#1a8038',
-    candleBear: '#c0392b',
-    wickBull:   '#1a8038',
-    wickBear:   '#c0392b',
-    volumeBull: 'rgba(26,128,56,0.30)',
-    volumeBear: 'rgba(192,57,43,0.30)',
-    gridline:   'rgba(0,0,0,0.06)',
-    text:       '#222222',
-    accent:     '#158cba',
+    bg:          'rgba(0,0,0,0)',
+    candleBull:  '#1a8038',
+    candleBear:  '#c0392b',
+    wickBull:    '#1a8038',
+    wickBear:    '#c0392b',
+    volumeBull:  'rgba(26,128,56,0.30)',
+    volumeBear:  'rgba(192,57,43,0.30)',
+    gridline:    'rgba(0,0,0,0.06)',
+    text:        '#222222',
+    accent:      '#158cba',
+    markerEntry: '#1a9e3f',
+    markerExit:  '#d93025',
   },
   phosphor: {
-    bg:         '#060d06',
-    candleBull: '#33ff33',
-    candleBear: '#ff5050',
-    wickBull:   '#33ff33',
-    wickBear:   '#ff5050',
-    volumeBull: 'rgba(51,255,51,0.35)',
-    volumeBear: 'rgba(255,80,80,0.35)',
-    gridline:   'rgba(51,255,51,0.10)',
-    text:       '#33ff33',
-    accent:     '#80ff80',
+    bg:          '#060d06',
+    candleBull:  '#33ff33',
+    candleBear:  '#ff5050',
+    wickBull:    '#33ff33',
+    wickBear:    '#ff5050',
+    volumeBull:  'rgba(51,255,51,0.35)',
+    volumeBear:  'rgba(255,80,80,0.35)',
+    gridline:    'rgba(51,255,51,0.10)',
+    text:        '#33ff33',
+    accent:      '#80ff80',
+    markerEntry: '#80ff80',
+    markerExit:  '#ff8080',
   },
   amber: {
-    bg:         '#0a0700',
-    candleBull: '#ffd060',
-    candleBear: '#ff5000',
-    wickBull:   '#ffd060',
-    wickBear:   '#ff5000',
-    volumeBull: 'rgba(255,208,96,0.35)',
-    volumeBear: 'rgba(255,80,0,0.35)',
-    gridline:   'rgba(255,176,0,0.10)',
-    text:       '#ffb000',
-    accent:     '#ffd060',
+    bg:          '#0a0700',
+    candleBull:  '#ffd060',
+    candleBear:  '#ff5000',
+    wickBull:    '#ffd060',
+    wickBear:    '#ff5000',
+    volumeBull:  'rgba(255,208,96,0.35)',
+    volumeBear:  'rgba(255,80,0,0.35)',
+    gridline:    'rgba(255,176,0,0.10)',
+    text:        '#ffb000',
+    accent:      '#ffd060',
+    markerEntry: '#ffe080',
+    markerExit:  '#ff7030',
   },
 }
 
@@ -234,7 +301,7 @@ export function indexToX(idx: number, firstIdx: number, slotW: number): number {
 
 // ── Main draw ─────────────────────────────────────────────────────────────────
 
-export interface DrawKLineOpts {
+export interface DrawCandleOpts {
   candles:        OHLCVCandle[]
   /** Pixel width per candle slot (body + spacing). Driven by zoom level. */
   slotW:          number
@@ -284,13 +351,13 @@ function niceStep(range: number, targetCount: number): number {
   return mult * pow10
 }
 
-export function drawKLine(canvas: HTMLCanvasElement, opts: DrawKLineOpts): void {
+export function drawCandle(canvas: HTMLCanvasElement, opts: DrawCandleOpts): void {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
   const W = canvas.width
   const H = canvas.height
-  const c = KLINE_THEME_COLORS[opts.theme] ?? KLINE_THEME_COLORS['none']
+  const c = CANDLE_THEME_COLORS[opts.theme] ?? CANDLE_THEME_COLORS['none']
 
   // Background
   ctx.clearRect(0, 0, W, H)
@@ -383,7 +450,7 @@ export function drawKLine(canvas: HTMLCanvasElement, opts: DrawKLineOpts): void 
 
 function drawPriceAxis(
   ctx:    CanvasRenderingContext2D,
-  c:      KLineColors,
+  c:      CandleColors,
   bounds: PriceBounds,
   panes:  PaneLayout,
   W:      number,
@@ -418,7 +485,7 @@ function drawPriceAxis(
 
 function drawTimeAxis(
   ctx:     CanvasRenderingContext2D,
-  c:       KLineColors,
+  c:       CandleColors,
   candles: OHLCVCandle[],
   win:     VisibleWindow,
   slotW:   number,
@@ -450,7 +517,7 @@ function drawTimeAxis(
 
 function drawCrosshair(
   ctx:     CanvasRenderingContext2D,
-  c:       KLineColors,
+  c:       CandleColors,
   candles: OHLCVCandle[],
   win:     VisibleWindow,
   bounds:  PriceBounds,
