@@ -101,8 +101,10 @@ export declare const DEFAULT_VOLUME_FRACTION = 0.18;
 /** Pixel padding around the chart inside the canvas. */
 export declare const PADDING_TOP = 8;
 export declare const PADDING_BOTTOM = 22;
+export declare const PADDING_BOTTOM_COMPACT = 4;
 export declare const PADDING_LEFT = 8;
 export declare const PADDING_RIGHT = 56;
+export declare const PADDING_RIGHT_COMPACT = 42;
 /** Pixel gap between the price pane and the volume pane. */
 export declare const PANE_GAP = 4;
 /** Minimum candle body width (px). Candles narrower than this are 1px lines. */
@@ -119,7 +121,7 @@ export interface VisibleWindow {
     /** px reserved per candle slot (body + spacing). */
     slotW: number;
 }
-export declare function computeVisibleWindow(totalCandles: number, canvasW: number, slotW: number, scrollX?: number): VisibleWindow;
+export declare function computeVisibleWindow(totalCandles: number, canvasW: number, slotW: number, scrollX?: number, compact?: boolean): VisibleWindow;
 /**
  * Compute the price min/max across the visible candles. Used to scale the
  * price axis so all visible wicks fit. Adds a small head/tail-room so candles
@@ -142,7 +144,7 @@ export interface PaneLayout {
     volumeY0: number;
     volumeY1: number;
 }
-export declare function computePaneLayout(canvasH: number, volumeFraction: number): PaneLayout;
+export declare function computePaneLayout(canvasH: number, volumeFraction: number, compact?: boolean): PaneLayout;
 /** Map a price to a y-pixel within `[y0, y1]` given price bounds. */
 export declare function priceToY(price: number, bounds: PriceBounds, y0: number, y1: number): number;
 /** Map a candle index to the centre x-pixel of its slot. */
@@ -166,5 +168,16 @@ export interface DrawCandleOpts {
     overlays?: PriceOverlay[];
     /** Trade entry / exit annotations at (timestamp, price) points. */
     markers?: TradeMarker[];
+    /**
+     * Thumbnail mode — drops the time axis, the interval badge, and reduces
+     * the price-axis label density / font size. Use for mini-charts where
+     * full axis chrome doesn't fit in the available pixels.
+     */
+    compact?: boolean;
+    /**
+     * Per-call colour overrides merged onto the active theme. Lets a
+     * consumer match its own brand palette without registering a new theme.
+     */
+    colors?: Partial<CandleColors>;
 }
 export declare function drawCandle(canvas: HTMLCanvasElement, opts: DrawCandleOpts): void;

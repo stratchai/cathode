@@ -138,6 +138,9 @@ const showIndicators = ref(true)
 // Force the 2D pipeline (skip Three.js + barrel shader). Mirrors the prop
 // dashboards use for mini-charts to dodge Chrome's WebGL-context cap.
 const flat            = ref(false)
+// Thumbnail-style chrome — drops the time axis + interval badge, sparser
+// price labels. Used by mini-chart consumers (e.g. dashboard ChartPanel).
+const compact         = ref(false)
 
 watch(activeTab,  (tab) => { if (tab === 'grid') gridKey.value++ })
 // NOTE: do NOT bump gridKey on curvature change. It used to work as a brute-
@@ -464,6 +467,10 @@ seedLogEntries()
         <input type="checkbox" v-model="flat" data-testid="cf-flat" />
         Flat (no GL)
       </label>
+      <label v-if="activeTab === 'candle'">
+        <input type="checkbox" v-model="compact" data-testid="cf-compact" />
+        Compact
+      </label>
 
       <div class="demo-spacer" />
 
@@ -518,6 +525,7 @@ seedLogEntries()
         :scanlines="scanlines"
         :glow="glow"
         :flat="flat"
+        :compact="compact"
       />
     </div>
 

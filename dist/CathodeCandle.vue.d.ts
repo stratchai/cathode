@@ -1,4 +1,4 @@
-import { type OHLCVCandle, type PriceOverlay, type TradeMarker } from './CanvasCandle';
+import { type OHLCVCandle, type PriceOverlay, type TradeMarker, type CandleColors } from './CanvasCandle';
 import './cathode.css';
 type __VLS_Props = {
     candles: OHLCVCandle[];
@@ -25,6 +25,18 @@ type __VLS_Props = {
      * The barrel effect is also barely legible at small sizes.
      */
     flat?: boolean;
+    /**
+     * Thumbnail mode — drops the time axis + interval badge, narrows the
+     * right-edge gutter, sparser & smaller price-axis labels. Use for
+     * mini-charts (~120–180px tall) where the full chrome doesn't fit.
+     */
+    compact?: boolean;
+    /**
+     * Per-instance colour overrides merged onto the active theme. Lets the
+     * consumer match its own brand palette (e.g. dashboard's #00bc8c) without
+     * having to register a new theme upstream.
+     */
+    colors?: Partial<CandleColors>;
 };
 declare const _default: import("vue").DefineComponent<__VLS_Props, {}, {}, {}, {}, import("vue").ComponentOptionsMixin, import("vue").ComponentOptionsMixin, {}, string, import("vue").PublicProps, Readonly<__VLS_Props> & Readonly<{}>, {
     flat: boolean;
@@ -32,6 +44,7 @@ declare const _default: import("vue").DefineComponent<__VLS_Props, {}, {}, {}, {
     theme: "none" | "phosphor" | "amber" | "paper";
     curvature: number;
     scanlines: boolean;
+    compact: boolean;
     showVolume: boolean;
     volumeFraction: number;
     slotW: number;

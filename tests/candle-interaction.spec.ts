@@ -422,6 +422,52 @@ test.describe('CathodeCandle', () => {
     expect(watch.entries).toEqual([]);
   });
 
+  test('compact mode drops the time axis + interval badge', async ({ page }) => {
+    // Regression: without the compact prop, mini-cards in the dashboard
+    // ChartPanel rendered the full time-axis labels at 180px wide, where
+    // they collapsed into illegible smears. Compact mode skips them.
+    const watch = collectConsoleErrors(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: /^Candle$/ }).click();
+    const canvas = page.locator('.tab-content:visible canvas').first();
+    await canvas.waitFor({ state: 'visible' });
+    await page.waitForTimeout(300);
+
+    // Sample bottom-edge pixels with full chrome — interval badge sits
+    // bottom-right, time labels run across the bottom strip.
+    const sampleBottomBand = async () => canvas.evaluate((c: HTMLCanvasElement) => {
+      const ctx = c.getContext('2d');
+      if (!ctx) return { ok: false, opaqueBottom: 0 };
+      const stripH = 18;                           // axis label band height
+      const data = ctx.getImageData(0, c.height - stripH, c.width, stripH).data;
+      let opaque = 0, count = 0;
+      for (let i = 3; i < data.length; i += 4) {
+        if (data[i] >= 200) opaque++;
+        count++;
+      }
+      return { ok: true, opaqueBottom: opaque / count };
+    });
+
+    // Ensure WebGL pipeline + flat-fallback both render compact identically:
+    // toggle to flat so we read pixel data directly off the visible canvas.
+    await page.getByTestId('cf-flat').check();
+    await page.waitForTimeout(300);
+
+    const fullChrome = await sampleBottomBand();
+    expect(fullChrome.ok).toBe(true);
+
+    await page.getByTestId('cf-compact').check();
+    await page.waitForTimeout(300);
+
+    const compactChrome = await sampleBottomBand();
+    expect(compactChrome.opaqueBottom,
+      `compact bottom-band opaque ratio (${(compactChrome.opaqueBottom * 100).toFixed(1)}%) ` +
+      `should be lower than full chrome (${(fullChrome.opaqueBottom * 100).toFixed(1)}%)`,
+    ).toBeLessThan(fullChrome.opaqueBottom);
+
+    expect(watch.entries).toEqual([]);
+  });
+
   test('flat mode does not accumulate across redraws (transparent-bg stacking bug)', async ({ page }) => {
     // Regression: themes with `bg: rgba(0,0,0,0)` (none, paper) caused the
     // 2D fallback to layer drawImage on top of the previous frame because

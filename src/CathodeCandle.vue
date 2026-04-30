@@ -6,7 +6,7 @@ import type { CSSProperties, Ref } from 'vue'
 import * as THREE from 'three'
 import {
   drawCandle, CANDLE_THEME_COLORS, DEFAULT_VOLUME_FRACTION,
-  type OHLCVCandle, type PriceOverlay, type TradeMarker,
+  type OHLCVCandle, type PriceOverlay, type TradeMarker, type CandleColors,
 } from './CanvasCandle'
 import './cathode.css'
 
@@ -37,6 +37,18 @@ const props = withDefaults(defineProps<{
    * The barrel effect is also barely legible at small sizes.
    */
   flat?:          boolean
+  /**
+   * Thumbnail mode — drops the time axis + interval badge, narrows the
+   * right-edge gutter, sparser & smaller price-axis labels. Use for
+   * mini-charts (~120–180px tall) where the full chrome doesn't fit.
+   */
+  compact?:       boolean
+  /**
+   * Per-instance colour overrides merged onto the active theme. Lets the
+   * consumer match its own brand palette (e.g. dashboard's #00bc8c) without
+   * having to register a new theme upstream.
+   */
+  colors?:        Partial<CandleColors>
 }>(), {
   theme:          'none',
   curvature:      25,
@@ -46,6 +58,7 @@ const props = withDefaults(defineProps<{
   volumeFraction: DEFAULT_VOLUME_FRACTION,
   slotW:          8,
   flat:           false,
+  compact:        false,
 })
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
@@ -243,6 +256,8 @@ function redraw() {
       hover:          hover.value,
       overlays:       props.overlays,
       markers:        props.markers,
+      compact:        props.compact,
+      colors:         props.colors,
     })
     const ctx2d = canvasEl.value.getContext('2d')
     if (ctx2d) {
@@ -275,6 +290,8 @@ function redraw() {
     hover:          hover.value,
     overlays:       props.overlays,
     markers:        props.markers,
+    compact:        props.compact,
+    colors:         props.colors,
   })
 
   texture.needsUpdate = true
@@ -293,6 +310,8 @@ watch(() => props.slotW,          () => redraw())
 watch(() => props.candles,        () => redraw(), { deep: false })
 watch(() => props.overlays,       () => redraw(), { deep: false })
 watch(() => props.markers,        () => redraw(), { deep: false })
+watch(() => props.compact,        () => redraw())
+watch(() => props.colors,         () => redraw(), { deep: true })
 
 // `flat` is a mount-time decision — once a canvas element has been used
 // for WebGL the browser locks it (getContext('2d') returns null), so a

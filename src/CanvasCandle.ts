@@ -193,13 +193,16 @@ export const CANDLE_THEME_COLORS: Record<string, CandleColors> = {
 export const DEFAULT_VOLUME_FRACTION = 0.18
 
 /** Pixel padding around the chart inside the canvas. */
-export const PADDING_TOP    = 8
-export const PADDING_BOTTOM = 22  // room for time-axis labels
-export const PADDING_LEFT   = 8
-export const PADDING_RIGHT  = 56  // room for price-axis labels
+export const PADDING_TOP            = 8
+export const PADDING_BOTTOM         = 22  // room for time-axis labels
+export const PADDING_BOTTOM_COMPACT = 4   // no time axis in compact (mini-chart) mode
+export const PADDING_LEFT           = 8
+export const PADDING_RIGHT          = 56  // room for price-axis labels
+export const PADDING_RIGHT_COMPACT  = 42  // narrower mini-chart axis labels
 
 /** Font for axis + crosshair labels. */
-const AXIS_FONT = '10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
+const AXIS_FONT         = '10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
+const AXIS_FONT_COMPACT = '9px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
 
 /** Pixel gap between the price pane and the volume pane. */
 export const PANE_GAP = 4
@@ -228,8 +231,10 @@ export function computeVisibleWindow(
   canvasW:      number,
   slotW:        number,
   scrollX = 0,
+  compact = false,
 ): VisibleWindow {
-  const usableW   = Math.max(0, canvasW - PADDING_LEFT - PADDING_RIGHT)
+  const padR      = compact ? PADDING_RIGHT_COMPACT : PADDING_RIGHT
+  const usableW   = Math.max(0, canvasW - PADDING_LEFT - padR)
   const maxSlots  = Math.max(1, Math.floor(usableW / slotW))
   const count     = Math.min(maxSlots, totalCandles)
   // Default: stick to the right edge (most recent candle visible).
@@ -289,10 +294,11 @@ export interface PaneLayout {
   volumeY1: number
 }
 
-export function computePaneLayout(canvasH: number, volumeFraction: number): PaneLayout {
-  const usableH = Math.max(1, canvasH - PADDING_TOP - PADDING_BOTTOM - PANE_GAP)
-  const volH    = Math.max(0, Math.round(usableH * volumeFraction))
-  const priceH  = usableH - volH
+export function computePaneLayout(canvasH: number, volumeFraction: number, compact = false): PaneLayout {
+  const padBottom = compact ? PADDING_BOTTOM_COMPACT : PADDING_BOTTOM
+  const usableH   = Math.max(1, canvasH - PADDING_TOP - padBottom - PANE_GAP)
+  const volH      = Math.max(0, Math.round(usableH * volumeFraction))
+  const priceH    = usableH - volH
   return {
     priceY0:  PADDING_TOP,
     priceY1:  PADDING_TOP + priceH,
@@ -334,6 +340,17 @@ export interface DrawCandleOpts {
   overlays?:      PriceOverlay[]
   /** Trade entry / exit annotations at (timestamp, price) points. */
   markers?:       TradeMarker[]
+  /**
+   * Thumbnail mode — drops the time axis, the interval badge, and reduces
+   * the price-axis label density / font size. Use for mini-charts where
+   * full axis chrome doesn't fit in the available pixels.
+   */
+  compact?:       boolean
+  /**
+   * Per-call colour overrides merged onto the active theme. Lets a
+   * consumer match its own brand palette without registering a new theme.
+   */
+  colors?:        Partial<CandleColors>
 }
 
 /** Format a price as a financial number — thousands separators, decimal scale
@@ -382,7 +399,9 @@ export function drawCandle(canvas: HTMLCanvasElement, opts: DrawCandleOpts): voi
 
   const W = canvas.width
   const H = canvas.height
-  const c = CANDLE_THEME_COLORS[opts.theme] ?? CANDLE_THEME_COLORS['none']
+  const baseTheme = CANDLE_THEME_COLORS[opts.theme] ?? CANDLE_THEME_COLORS['none']
+  const c: CandleColors = opts.colors ? { ...baseTheme, ...opts.colors } : baseTheme
+  const compact = !!opts.compact
 
   // Background
   ctx.clearRect(0, 0, W, H)
@@ -397,9 +416,9 @@ export function drawCandle(canvas: HTMLCanvasElement, opts: DrawCandleOpts): voi
   ctx.clip()
 
   // Visible window
-  const win    = computeVisibleWindow(opts.candles.length, W, opts.slotW, opts.scrollX)
+  const win    = computeVisibleWindow(opts.candles.length, W, opts.slotW, opts.scrollX, compact)
   const bounds = computePriceBounds(opts.candles, win.firstIdx, win.count)
-  const panes  = computePaneLayout(H, opts.showVolume ? opts.volumeFraction : 0)
+  const panes  = computePaneLayout(H, opts.showVolume ? opts.volumeFraction : 0, compact)
 
   // Candle body width — leave 30% of slot as gap, capped at min 1px.
   const bodyW = Math.max(MIN_CANDLE_WIDTH, Math.floor(opts.slotW * 0.7))
@@ -468,13 +487,14 @@ export function drawCandle(canvas: HTMLCanvasElement, opts: DrawCandleOpts): voi
   }
 
   // ── Price axis (right edge) ─────────────────────────────────────────────────
-  drawPriceAxis(ctx, c, bounds, panes, W)
+  drawPriceAxis(ctx, c, bounds, panes, W, compact)
 
-  // ── Time axis (bottom edge) ─────────────────────────────────────────────────
-  drawTimeAxis(ctx, c, opts.candles, win, opts.slotW, H)
-
-  // ── Interval badge (right side of time axis, e.g. "1h", "5m") ──────────────
-  drawIntervalBadge(ctx, c, opts.candles, W, H)
+  // ── Time axis + interval badge — full-size charts only. Compact mode
+  //    skips both because at thumbnail width they collapse into smears.
+  if (!compact) {
+    drawTimeAxis(ctx, c, opts.candles, win, opts.slotW, H)
+    drawIntervalBadge(ctx, c, opts.candles, W, H)
+  }
 
   // ── Indicator legend (top-left of price pane) ──────────────────────────────
   if (opts.overlays?.length) {
@@ -990,18 +1010,27 @@ function drawMarkers(
 // ── Axis drawing ──────────────────────────────────────────────────────────────
 
 function drawPriceAxis(
-  ctx:    CanvasRenderingContext2D,
-  c:      CandleColors,
-  bounds: PriceBounds,
-  panes:  PaneLayout,
-  W:      number,
+  ctx:     CanvasRenderingContext2D,
+  c:       CandleColors,
+  bounds:  PriceBounds,
+  panes:   PaneLayout,
+  W:       number,
+  compact = false,
 ): void {
   const range = bounds.max - bounds.min
   if (range <= 0) return
-  const step      = niceStep(range, 6)
-  const startTick = Math.ceil(bounds.min / step) * step
+  // Compact panels are short — fewer labels avoid stacking. Also derive
+  // a per-height target so a 120px card gets ~3 labels but a 240px card
+  // gets ~5 even in compact mode.
+  const paneH       = panes.priceY1 - panes.priceY0
+  const targetCount = compact
+    ? Math.max(2, Math.min(4, Math.round(paneH / 36)))
+    : 6
+  const step        = niceStep(range, targetCount)
+  const startTick   = Math.ceil(bounds.min / step) * step
+  const padR        = compact ? PADDING_RIGHT_COMPACT : PADDING_RIGHT
 
-  ctx.font         = AXIS_FONT
+  ctx.font         = compact ? AXIS_FONT_COMPACT : AXIS_FONT
   ctx.fillStyle    = c.text
   ctx.strokeStyle  = c.gridline
   ctx.textBaseline = 'middle'
@@ -1015,10 +1044,10 @@ function drawPriceAxis(
     // Subtle horizontal gridline across the price pane
     ctx.beginPath()
     ctx.moveTo(PADDING_LEFT, Math.round(y) + 0.5)
-    ctx.lineTo(W - PADDING_RIGHT, Math.round(y) + 0.5)
+    ctx.lineTo(W - padR, Math.round(y) + 0.5)
     ctx.stroke()
     // Label flush to the right edge
-    ctx.fillText(fmtPrice(v), W - PADDING_RIGHT + 4, y)
+    ctx.fillText(fmtPrice(v), W - padR + 3, y)
   }
 
   ctx.globalAlpha = 1
