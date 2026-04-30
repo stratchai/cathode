@@ -9,7 +9,7 @@ import { buildDefaultLayout } from '../src/useCathodeLayout'
 import type { ColDef, GridApi } from '../src/types'
 import type { ContainerState } from '../src/useCathodeLayout'
 import type { LogEntry } from '../src/CanvasLog'
-import type { OHLCVCandle } from '../src/CanvasCandle'
+import type { OHLCVCandle, PriceOverlay, TradeMarker } from '../src/CanvasCandle'
 
 // ── Shared state ──────────────────────────────────────────────────────────────
 type DemoTab = 'grid' | 'workspace' | 'log' | 'candle'
@@ -132,6 +132,9 @@ const glow       = ref(true)
 const quickText  = ref('')
 const statusFilt = ref<'all' | 'open' | 'closed'>('all')
 const gridKey    = ref(0)
+// Candle-tab toggle — turns the BB/EMA overlays + trade markers off, used by
+// the e2e test to verify overlays actually drew (compare bytes on vs off).
+const showIndicators = ref(true)
 
 watch(activeTab,  (tab) => { if (tab === 'grid') gridKey.value++ })
 // NOTE: do NOT bump gridKey on curvature change. It used to work as a brute-
@@ -260,6 +263,94 @@ function generateOHLCV(n: number): OHLCVCandle[] {
 }
 
 const demoCandles = ref<OHLCVCandle[]>(generateOHLCV(300))
+
+// ── Indicator math (small inline copies — production consumers should pull
+//    these from @stratchai/core's indicator library) ─────────────────────────
+
+/** Simple Moving Average — y[i] is the mean of the last `period` closes,
+ *  NaN for indices where i+1 < period. */
+function sma(closes: number[], period: number): number[] {
+  const out = new Array<number>(closes.length).fill(NaN)
+  let sum = 0
+  for (let i = 0; i < closes.length; i++) {
+    sum += closes[i]
+    if (i >= period) sum -= closes[i - period]
+    if (i + 1 >= period) out[i] = sum / period
+  }
+  return out
+}
+
+/** Exponential Moving Average. */
+function ema(closes: number[], period: number): number[] {
+  const out = new Array<number>(closes.length).fill(NaN)
+  if (!closes.length) return out
+  const k = 2 / (period + 1)
+  let acc = closes[0]
+  out[0] = acc
+  for (let i = 1; i < closes.length; i++) {
+    acc = closes[i] * k + acc * (1 - k)
+    out[i] = acc
+  }
+  // Mark warmup region as NaN — the first (period - 1) values aren't a real EMA yet.
+  for (let i = 0; i < Math.min(period - 1, closes.length); i++) out[i] = NaN
+  return out
+}
+
+/** Bollinger Bands — middle = SMA(period), upper/lower = middle ± k×stdDev. */
+function bollinger(closes: number[], period = 20, k = 2): { upper: number[]; middle: number[]; lower: number[] } {
+  const middle = sma(closes, period)
+  const upper  = new Array<number>(closes.length).fill(NaN)
+  const lower  = new Array<number>(closes.length).fill(NaN)
+  for (let i = period - 1; i < closes.length; i++) {
+    let varSum = 0
+    for (let j = i - period + 1; j <= i; j++) {
+      const d = closes[j] - middle[i]
+      varSum += d * d
+    }
+    const sd = Math.sqrt(varSum / period)
+    upper[i] = middle[i] + k * sd
+    lower[i] = middle[i] - k * sd
+  }
+  return { upper, middle, lower }
+}
+
+const demoOverlays = computed<PriceOverlay[]>(() => {
+  const closes = demoCandles.value.map(c => c.close)
+  const bb     = bollinger(closes, 20, 2)
+  return [
+    // Bollinger Bands — band with semi-transparent fill + dashed midline
+    {
+      kind:         'band',
+      upper:        bb.upper,
+      middle:       bb.middle,
+      lower:        bb.lower,
+      color:        '#40a0f0',
+      fillAlpha:    0.06,
+      middleDashed: true,
+      label:        'BB(20,2)',
+    },
+    // Fast EMA (10) — solid line
+    { kind: 'line', data: ema(closes, 10), color: '#26a69a', lineWidth: 1, label: 'EMA(10)' },
+    // Slow EMA (50) — solid line
+    { kind: 'line', data: ema(closes, 50), color: '#ffd060', lineWidth: 1, label: 'EMA(50)' },
+  ]
+})
+
+// Fake trade markers — sprinkle a few entry/exit pairs across the visible window.
+// Real consumers pass exact (timestamp, price) tuples from their trade history.
+const demoMarkers = computed<TradeMarker[]>(() => {
+  const cs = demoCandles.value
+  if (cs.length < 60) return []
+  const pick = (i: number) => cs[i]
+  return [
+    { timestamp: pick(cs.length - 240).start, price: pick(cs.length - 240).low,  kind: 'entry' },
+    { timestamp: pick(cs.length - 200).start, price: pick(cs.length - 200).high, kind: 'exit'  },
+    { timestamp: pick(cs.length - 160).start, price: pick(cs.length - 160).low,  kind: 'entry' },
+    { timestamp: pick(cs.length - 120).start, price: pick(cs.length - 120).high, kind: 'exit'  },
+    { timestamp: pick(cs.length -  80).start, price: pick(cs.length -  80).low,  kind: 'entry' },
+    { timestamp: pick(cs.length -  40).start, price: pick(cs.length -  40).high, kind: 'exit'  },
+  ]
+})
 function seedLogEntries() {
   const out: LogEntry[] = []
   const base = Date.now() - 1000 * 60 * 30
@@ -309,6 +400,10 @@ seedLogEntries()
       <input type="range" min="0" max="45" step="1" v-model.number="curvature" style="width:110px" />
       <label><input type="checkbox" v-model="scanlines" /> Scanlines</label>
       <label><input type="checkbox" v-model="glow" />      Glow</label>
+      <label v-if="activeTab === 'candle'">
+        <input type="checkbox" v-model="showIndicators" data-testid="cf-show-indicators" />
+        Indicators
+      </label>
 
       <div class="demo-spacer" />
 
@@ -355,6 +450,8 @@ seedLogEntries()
     <div v-show="activeTab === 'candle'" class="tab-content">
       <CathodeCandle
         :candles="demoCandles"
+        :overlays="showIndicators ? demoOverlays : []"
+        :markers="showIndicators ? demoMarkers : []"
         :theme="theme"
         :curvature="curvature"
         :scanlines="scanlines"

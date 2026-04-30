@@ -8,5 +8,5 @@ export type { ContainerState } from './useCathodeLayout';
 export type { ColDef, ColState, GridApi, GridReadyEvent, RowClickedEvent, ResolvedCol, ValueGetterParams, ValueFormatterParams, CellStyleParams, CellRendererParams, } from './types';
 export type { LogEntry, LogLevel, LogColors } from './CanvasLog';
 export { LOG_THEME_COLORS } from './CanvasLog';
-export type { OHLCVCandle, CandleColors } from './CanvasCandle';
+export type { OHLCVCandle, CandleColors, PriceOverlay, PriceOverlayLine, PriceOverlayBand, TradeMarker, } from './CanvasCandle';
 export { CANDLE_THEME_COLORS } from './CanvasCandle';

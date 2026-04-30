@@ -110,6 +110,24 @@ and CathodeLog. Originally drafted as "CurvedKLine" then "CathodeKLine"
 | 5 | Time axis (bottom edge) — auto-scaled labels (~6 across visible window) | ✓ done |
 | 6 | Playwright tests — wheel/zoom/pan/crosshair byte-floor + console-error checks | ✓ done (3 new tests, 15 total in suite) |
 
+### PR 2.5 — indicator overlays + trade markers  ✓ (2026-04-30)
+
+The bridge step toward "render-a-strategy" charts. Cathode stays
+strategy-agnostic — it accepts pre-computed indicator series and
+draws them. Consumers (dashboard, future helper) will compute via
+`@stratchai/core`'s indicator library.
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | `PriceOverlay` union type — `{ kind: 'line', data, color, lineWidth?, dashed? }` and `{ kind: 'band', upper, lower, middle?, color, fillAlpha?, middleDashed? }` | ✓ done |
+| 2 | `TradeMarker` type — `{ timestamp, price, kind: 'entry' \| 'exit', color? }` | ✓ done |
+| 3 | `drawOverlay` (line/band) + `drawSeriesLine` / `drawSeriesBand` helpers — NaN-aware, breaks polyline + fills band on gaps | ✓ done |
+| 4 | `drawMarkers` — binary-search candle by timestamp ±0.5×interval, ▲/▼ triangle anchored at price | ✓ done |
+| 5 | `CathodeCandle` props: `overlays?: PriceOverlay[]`, `markers?: TradeMarker[]` | ✓ done |
+| 6 | Demo: BB(20,2) band + EMA(10) + EMA(50) lines + 6 entry/exit markers across the 300-bar window | ✓ done |
+| 7 | Demo: `Indicators` checkbox to toggle overlays+markers (dual-purpose: visible UX + e2e test handle) | ✓ done |
+| 8 | Playwright test: toggle on/off, screenshot byte-deltas catch a non-rendering regression; re-enable restores state | ✓ done (1 new test, 16 total) |
+
 ### PR 3 — dashboard ChartPanel integration  ← next
 
 | # | Item | Notes |

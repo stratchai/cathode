@@ -1,4 +1,4 @@
-import { type OHLCVCandle } from './CanvasCandle';
+import { type OHLCVCandle, type PriceOverlay, type TradeMarker } from './CanvasCandle';
 import './cathode.css';
 type __VLS_Props = {
     candles: OHLCVCandle[];
@@ -14,6 +14,10 @@ type __VLS_Props = {
     volumeFraction?: number;
     /** px slot width per candle (driver of "zoom"). Higher = wider candles. */
     slotW?: number;
+    /** Indicator series drawn on the price pane (BB, EMA, SMA, etc.). */
+    overlays?: PriceOverlay[];
+    /** Trade entry/exit annotations at (timestamp, price) points. */
+    markers?: TradeMarker[];
 };
 declare const _default: import("vue").DefineComponent<__VLS_Props, {}, {}, {}, {}, import("vue").ComponentOptionsMixin, import("vue").ComponentOptionsMixin, {}, string, import("vue").PublicProps, Readonly<__VLS_Props> & Readonly<{}>, {
     glow: boolean;

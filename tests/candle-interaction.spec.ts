@@ -177,6 +177,56 @@ test.describe('CathodeCandle', () => {
     expect(watch.entries).toEqual([]);
   });
 
+  // ── PR 2.5: indicator overlays + trade markers ─────────────────────────────
+
+  test('indicator overlays + trade markers add visible content', async ({ page }) => {
+    const watch = collectConsoleErrors(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: /^Candle$/ }).click();
+    const canvas = page.locator('.tab-content:visible canvas').first();
+    await canvas.waitFor({ state: 'visible' });
+    await page.waitForTimeout(400);
+
+    async function bytes(): Promise<number> {
+      return (await canvas.screenshot()).length;
+    }
+
+    // Indicators ON (default) — capture bytes.
+    const withIndicators = await bytes();
+
+    // Toggle off via the demo's checkbox.
+    const toggle = page.getByTestId('cf-show-indicators');
+    await expect(toggle).toBeChecked();
+    await toggle.uncheck();
+    await page.waitForTimeout(150);
+
+    const withoutIndicators = await bytes();
+
+    expect(withIndicators,
+      `screenshot bytes did not change when toggling overlays + markers ` +
+      `(on=${withIndicators}, off=${withoutIndicators}) — overlays/markers ` +
+      `are not actually rendering`,
+    ).not.toBe(withoutIndicators);
+
+    // Sanity: both states have substantial canvas content (no blank).
+    expect(withIndicators).toBeGreaterThan(BLANK_FLOOR);
+    expect(withoutIndicators).toBeGreaterThan(BLANK_FLOOR);
+
+    // Re-enable — bytes should return CLOSE to the original on-state, much
+    // closer than to the off-state. Catches a watcher that fails to redraw
+    // when the prop reference changes.
+    await toggle.check();
+    await page.waitForTimeout(150);
+    const reEnabled = await bytes();
+    const drift = Math.abs(reEnabled - withIndicators);
+    const gap   = Math.abs(withIndicators - withoutIndicators);
+    expect(drift,
+      `re-enable did not restore the rendered state (drift ${drift} >= toggle gap ${gap})`,
+    ).toBeLessThan(gap);
+
+    expect(watch.entries).toEqual([]);
+  });
+
   test('crosshair + axis labels render under hover', async ({ page }) => {
     const watch = collectConsoleErrors(page);
     await page.goto('/');

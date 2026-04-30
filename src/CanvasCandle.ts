@@ -313,6 +313,10 @@ export interface DrawCandleOpts {
   volumeFraction: number
   /** Mouse position in canvas coords; null = no crosshair. */
   hover:          { x: number; y: number } | null
+  /** Indicator series drawn over the price pane (BB, EMA, SMA, etc.). */
+  overlays?:      PriceOverlay[]
+  /** Trade entry / exit annotations at (timestamp, price) points. */
+  markers?:       TradeMarker[]
 }
 
 /** Format a price for the right-axis label — fewer decimals at higher prices. */
@@ -432,6 +436,16 @@ export function drawCandle(canvas: HTMLCanvasElement, opts: DrawCandleOpts): voi
     }
   }
 
+  // ── Indicator overlays (lines + bands, drawn over candles) ──────────────────
+  if (opts.overlays?.length) {
+    for (const ov of opts.overlays) drawOverlay(ctx, ov, win, bounds, panes, opts.slotW)
+  }
+
+  // ── Trade markers (entry / exit triangles) ──────────────────────────────────
+  if (opts.markers?.length) {
+    drawMarkers(ctx, c, opts.markers, opts.candles, win, bounds, panes, opts.slotW)
+  }
+
   // ── Price axis (right edge) ─────────────────────────────────────────────────
   drawPriceAxis(ctx, c, bounds, panes, W)
 
@@ -444,6 +458,199 @@ export function drawCandle(canvas: HTMLCanvasElement, opts: DrawCandleOpts): voi
   }
 
   ctx.restore()
+}
+
+// ── Overlay drawing ───────────────────────────────────────────────────────────
+
+function drawOverlay(
+  ctx:     CanvasRenderingContext2D,
+  ov:      PriceOverlay,
+  win:     VisibleWindow,
+  bounds:  PriceBounds,
+  panes:   PaneLayout,
+  slotW:   number,
+): void {
+  const last = win.firstIdx + win.count
+  ctx.save()
+  // Clip to the price pane so overlays don't bleed into the volume area
+  // or the time-axis label band.
+  ctx.beginPath()
+  ctx.rect(PADDING_LEFT, panes.priceY0, /* width: */ 999999, panes.priceY1 - panes.priceY0)
+  ctx.clip()
+
+  if (ov.kind === 'line') {
+    drawSeriesLine(ctx, ov.data, win.firstIdx, last, slotW, bounds, panes, ov.color, ov.lineWidth ?? 1, ov.dashed === true)
+  } else {
+    // Band: filled area between upper and lower, with stroked edges + optional middle.
+    const fillColor = applyAlpha(ov.color, ov.fillAlpha ?? 0.08)
+    drawSeriesBand(ctx, ov.upper, ov.lower, win.firstIdx, last, slotW, bounds, panes, fillColor)
+    drawSeriesLine(ctx, ov.upper, win.firstIdx, last, slotW, bounds, panes, ov.color, 1, false)
+    drawSeriesLine(ctx, ov.lower, win.firstIdx, last, slotW, bounds, panes, ov.color, 1, false)
+    if (ov.middle?.length) {
+      drawSeriesLine(ctx, ov.middle, win.firstIdx, last, slotW, bounds, panes, ov.color, 1, ov.middleDashed !== false)
+    }
+  }
+
+  ctx.restore()
+}
+
+/** Stroke a polyline through the data series, breaking on NaN. */
+function drawSeriesLine(
+  ctx:    CanvasRenderingContext2D,
+  data:   number[],
+  first:  number,
+  last:   number,
+  slotW:  number,
+  bounds: PriceBounds,
+  panes:  PaneLayout,
+  color:  string,
+  width:  number,
+  dashed: boolean,
+): void {
+  if (!data || !data.length) return
+  ctx.strokeStyle = color
+  ctx.lineWidth   = width
+  ctx.setLineDash(dashed ? [4, 3] : [])
+  ctx.beginPath()
+  let started = false
+  for (let i = first; i < last; i++) {
+    const v = data[i]
+    if (typeof v !== 'number' || !isFinite(v)) {
+      if (started) { ctx.stroke(); ctx.beginPath(); started = false }
+      continue
+    }
+    const x = indexToX(i, first, slotW)
+    const y = priceToY(v, bounds, panes.priceY0, panes.priceY1)
+    if (!started) { ctx.moveTo(x, y); started = true }
+    else          ctx.lineTo(x, y)
+  }
+  if (started) ctx.stroke()
+  ctx.setLineDash([])
+}
+
+/** Fill a band between two series. NaN in either edge is treated as a gap. */
+function drawSeriesBand(
+  ctx:    CanvasRenderingContext2D,
+  upper:  number[],
+  lower:  number[],
+  first:  number,
+  last:   number,
+  slotW:  number,
+  bounds: PriceBounds,
+  panes:  PaneLayout,
+  fill:   string,
+): void {
+  if (!upper?.length || !lower?.length) return
+  ctx.fillStyle = fill
+
+  // Walk forward along upper, then backward along lower, building closed
+  // polygons that break on any NaN gap.
+  let inSegment = false
+  let segStart  = -1
+  for (let i = first; i <= last; i++) {
+    const u = upper[i]
+    const l = lower[i]
+    const valid = i < last && typeof u === 'number' && typeof l === 'number' && isFinite(u) && isFinite(l)
+    if (valid && !inSegment) { segStart = i; inSegment = true }
+    if ((!valid && inSegment) || (i === last && inSegment)) {
+      const segEnd = valid ? i + 1 : i
+      ctx.beginPath()
+      // Forward along upper
+      for (let j = segStart; j < segEnd; j++) {
+        const x = indexToX(j, first, slotW)
+        const y = priceToY(upper[j], bounds, panes.priceY0, panes.priceY1)
+        if (j === segStart) ctx.moveTo(x, y); else ctx.lineTo(x, y)
+      }
+      // Backward along lower
+      for (let j = segEnd - 1; j >= segStart; j--) {
+        const x = indexToX(j, first, slotW)
+        const y = priceToY(lower[j], bounds, panes.priceY0, panes.priceY1)
+        ctx.lineTo(x, y)
+      }
+      ctx.closePath()
+      ctx.fill()
+      inSegment = false
+    }
+  }
+}
+
+/** Apply an alpha to a CSS colour. Returns the input unchanged for unknown
+ *  formats — callers should pass solid hex / rgb / rgba. */
+function applyAlpha(color: string, alpha: number): string {
+  const a = Math.max(0, Math.min(1, alpha))
+  if (color.startsWith('#') && color.length === 7) {
+    const r = parseInt(color.slice(1, 3), 16)
+    const g = parseInt(color.slice(3, 5), 16)
+    const b = parseInt(color.slice(5, 7), 16)
+    return `rgba(${r},${g},${b},${a})`
+  }
+  if (color.startsWith('rgba')) return color.replace(/[\d.]+\)$/, `${a})`)
+  if (color.startsWith('rgb('))  return color.replace(/^rgb\(/, 'rgba(').replace(/\)$/, `,${a})`)
+  return color
+}
+
+// ── Trade markers ─────────────────────────────────────────────────────────────
+
+function drawMarkers(
+  ctx:     CanvasRenderingContext2D,
+  c:       CandleColors,
+  markers: TradeMarker[],
+  candles: OHLCVCandle[],
+  win:     VisibleWindow,
+  bounds:  PriceBounds,
+  panes:   PaneLayout,
+  slotW:   number,
+): void {
+  if (!candles.length) return
+  // Use bar-interval-derived tolerance: marker.timestamp must match a candle's
+  // start within ±0.5 × interval. Candles are sorted by start ascending.
+  const interval = candles.length > 1 ? candles[1].start - candles[0].start : 60_000
+  const tol      = Math.max(1, interval * 0.5)
+  const last     = Math.min(candles.length, win.firstIdx + win.count)
+
+  // Helper: binary-search candle index by timestamp
+  const findIdx = (ts: number): number => {
+    let lo = 0, hi = candles.length - 1
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1
+      const d   = candles[mid].start - ts
+      if (Math.abs(d) <= tol) return mid
+      if (d < 0) lo = mid + 1
+      else       hi = mid - 1
+    }
+    return -1
+  }
+
+  const SIZE = 7   // triangle half-width / half-height in px
+
+  for (const m of markers) {
+    const idx = findIdx(m.timestamp)
+    if (idx < 0 || idx < win.firstIdx || idx >= last) continue
+    const x = indexToX(idx, win.firstIdx, slotW)
+    const y = priceToY(m.price, bounds, panes.priceY0, panes.priceY1)
+    if (y < panes.priceY0 || y > panes.priceY1) continue   // off-pane
+
+    const color = m.color ?? (m.kind === 'entry' ? c.markerEntry : c.markerExit)
+    ctx.fillStyle = color
+    ctx.strokeStyle = c.bg.startsWith('rgba(0,0,0,0)') ? '#0d1520' : c.bg
+    ctx.lineWidth = 1.5
+
+    // Entry: ▲ pointing UP, anchored slightly BELOW the price (so the apex sits at price).
+    // Exit:  ▼ pointing DOWN, anchored slightly ABOVE the price.
+    ctx.beginPath()
+    if (m.kind === 'entry') {
+      ctx.moveTo(x,        y - SIZE)
+      ctx.lineTo(x - SIZE, y + SIZE - 1)
+      ctx.lineTo(x + SIZE, y + SIZE - 1)
+    } else {
+      ctx.moveTo(x,        y + SIZE)
+      ctx.lineTo(x - SIZE, y - SIZE + 1)
+      ctx.lineTo(x + SIZE, y - SIZE + 1)
+    }
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+  }
 }
 
 // ── Axis drawing ──────────────────────────────────────────────────────────────

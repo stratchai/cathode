@@ -6,7 +6,7 @@ import type { CSSProperties, Ref } from 'vue'
 import * as THREE from 'three'
 import {
   drawCandle, CANDLE_THEME_COLORS, DEFAULT_VOLUME_FRACTION,
-  type OHLCVCandle,
+  type OHLCVCandle, type PriceOverlay, type TradeMarker,
 } from './CanvasCandle'
 import './cathode.css'
 
@@ -26,6 +26,10 @@ const props = withDefaults(defineProps<{
   volumeFraction?: number
   /** px slot width per candle (driver of "zoom"). Higher = wider candles. */
   slotW?:         number
+  /** Indicator series drawn on the price pane (BB, EMA, SMA, etc.). */
+  overlays?:      PriceOverlay[]
+  /** Trade entry/exit annotations at (timestamp, price) points. */
+  markers?:       TradeMarker[]
 }>(), {
   theme:          'none',
   curvature:      25,
@@ -220,6 +224,8 @@ function redraw() {
       showVolume:     props.showVolume,
       volumeFraction: props.volumeFraction,
       hover:          hover.value,
+      overlays:       props.overlays,
+      markers:        props.markers,
     })
     const ctx2d = canvasEl.value.getContext('2d')
     if (ctx2d) ctx2d.drawImage(offCanvas, 0, 0)
@@ -243,6 +249,8 @@ function redraw() {
     showVolume:     props.showVolume,
     volumeFraction: props.volumeFraction,
     hover:          hover.value,
+    overlays:       props.overlays,
+    markers:        props.markers,
   })
 
   texture.needsUpdate = true
@@ -259,6 +267,8 @@ watch(() => props.showVolume,     () => redraw())
 watch(() => props.volumeFraction, () => redraw())
 watch(() => props.slotW,          () => redraw())
 watch(() => props.candles,        () => redraw(), { deep: false })
+watch(() => props.overlays,       () => redraw(), { deep: false })
+watch(() => props.markers,        () => redraw(), { deep: false })
 watch(scrollX,                    () => redraw())
 watch(zoomLevel,                  () => redraw())
 watch(hover,                      () => redraw())

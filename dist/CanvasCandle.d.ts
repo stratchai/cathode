@@ -155,5 +155,9 @@ export interface DrawCandleOpts {
         x: number;
         y: number;
     } | null;
+    /** Indicator series drawn over the price pane (BB, EMA, SMA, etc.). */
+    overlays?: PriceOverlay[];
+    /** Trade entry / exit annotations at (timestamp, price) points. */
+    markers?: TradeMarker[];
 }
 export declare function drawCandle(canvas: HTMLCanvasElement, opts: DrawCandleOpts): void;
