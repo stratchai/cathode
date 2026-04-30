@@ -110,9 +110,12 @@ export const DEFAULT_VOLUME_FRACTION = 0.18
 
 /** Pixel padding around the chart inside the canvas. */
 export const PADDING_TOP    = 8
-export const PADDING_BOTTOM = 8
+export const PADDING_BOTTOM = 22  // room for time-axis labels
 export const PADDING_LEFT   = 8
-export const PADDING_RIGHT  = 8
+export const PADDING_RIGHT  = 56  // room for price-axis labels
+
+/** Font for axis + crosshair labels. */
+const AXIS_FONT = '10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
 
 /** Pixel gap between the price pane and the volume pane. */
 export const PANE_GAP = 4
@@ -241,6 +244,44 @@ export interface DrawKLineOpts {
   showVolume:     boolean
   /** 0..1, fraction of pane reserved for the volume bars. */
   volumeFraction: number
+  /** Mouse position in canvas coords; null = no crosshair. */
+  hover:          { x: number; y: number } | null
+}
+
+/** Format a price for the right-axis label — fewer decimals at higher prices. */
+function fmtPrice(p: number): string {
+  if (p >= 10000) return p.toFixed(0)
+  if (p >= 100)   return p.toFixed(1)
+  if (p >= 1)     return p.toFixed(2)
+  if (p >= 0.01)  return p.toFixed(4)
+  return p.toFixed(6)
+}
+
+/** Format a ms-epoch timestamp for the bottom axis. Strips date if all
+ *  visible labels share it; falls back to MM-DD HH:mm otherwise. */
+function fmtTime(ts: number): string {
+  const d = new Date(ts)
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `${mm}-${dd} ${hh}:${mi}`
+}
+
+/** Pick a "nice" step that puts ~5-7 labels in the given range. Steps follow
+ *  a 1/2/5 cadence (..., 0.1, 0.2, 0.5, 1, 2, 5, 10, ...) for human-readable
+ *  axis labels. Returns the price step. */
+function niceStep(range: number, targetCount: number): number {
+  if (range <= 0 || !isFinite(range)) return 1
+  const rough = range / Math.max(1, targetCount)
+  const pow10 = Math.pow(10, Math.floor(Math.log10(rough)))
+  const norm  = rough / pow10
+  let mult: number
+  if      (norm < 1.5) mult = 1
+  else if (norm < 3)   mult = 2
+  else if (norm < 7)   mult = 5
+  else                 mult = 10
+  return mult * pow10
 }
 
 export function drawKLine(canvas: HTMLCanvasElement, opts: DrawKLineOpts): void {
@@ -323,6 +364,156 @@ export function drawKLine(canvas: HTMLCanvasElement, opts: DrawKLineOpts): void 
       }
     }
   }
+
+  // ── Price axis (right edge) ─────────────────────────────────────────────────
+  drawPriceAxis(ctx, c, bounds, panes, W)
+
+  // ── Time axis (bottom edge) ─────────────────────────────────────────────────
+  drawTimeAxis(ctx, c, opts.candles, win, opts.slotW, H)
+
+  // ── Crosshair (only when hovering inside the chart area) ────────────────────
+  if (opts.hover) {
+    drawCrosshair(ctx, c, opts.candles, win, bounds, panes, opts.slotW, opts.hover, W)
+  }
+
+  ctx.restore()
+}
+
+// ── Axis drawing ──────────────────────────────────────────────────────────────
+
+function drawPriceAxis(
+  ctx:    CanvasRenderingContext2D,
+  c:      KLineColors,
+  bounds: PriceBounds,
+  panes:  PaneLayout,
+  W:      number,
+): void {
+  const range = bounds.max - bounds.min
+  if (range <= 0) return
+  const step      = niceStep(range, 6)
+  const startTick = Math.ceil(bounds.min / step) * step
+
+  ctx.font         = AXIS_FONT
+  ctx.fillStyle    = c.text
+  ctx.strokeStyle  = c.gridline
+  ctx.textBaseline = 'middle'
+  ctx.textAlign    = 'left'
+  ctx.lineWidth    = 1
+  ctx.globalAlpha  = 0.7
+
+  for (let v = startTick; v <= bounds.max; v += step) {
+    const y = priceToY(v, bounds, panes.priceY0, panes.priceY1)
+    if (y < panes.priceY0 || y > panes.priceY1) continue
+    // Subtle horizontal gridline across the price pane
+    ctx.beginPath()
+    ctx.moveTo(PADDING_LEFT, Math.round(y) + 0.5)
+    ctx.lineTo(W - PADDING_RIGHT, Math.round(y) + 0.5)
+    ctx.stroke()
+    // Label flush to the right edge
+    ctx.fillText(fmtPrice(v), W - PADDING_RIGHT + 4, y)
+  }
+
+  ctx.globalAlpha = 1
+}
+
+function drawTimeAxis(
+  ctx:     CanvasRenderingContext2D,
+  c:       KLineColors,
+  candles: OHLCVCandle[],
+  win:     VisibleWindow,
+  slotW:   number,
+  H:       number,
+): void {
+  if (win.count <= 0 || !candles.length) return
+  // Aim for ~6 labels across the visible window
+  const labelsTarget = 6
+  const stepSlots    = Math.max(1, Math.floor(win.count / labelsTarget))
+
+  ctx.font         = AXIS_FONT
+  ctx.fillStyle    = c.text
+  ctx.textBaseline = 'top'
+  ctx.textAlign    = 'center'
+  ctx.globalAlpha  = 0.7
+
+  const last = Math.min(candles.length, win.firstIdx + win.count)
+  for (let i = win.firstIdx; i < last; i += stepSlots) {
+    const k = candles[i]
+    if (!k) continue
+    const x = indexToX(i, win.firstIdx, slotW)
+    ctx.fillText(fmtTime(k.start), x, H - PADDING_BOTTOM + 4)
+  }
+
+  ctx.globalAlpha = 1
+}
+
+// ── Crosshair ─────────────────────────────────────────────────────────────────
+
+function drawCrosshair(
+  ctx:     CanvasRenderingContext2D,
+  c:       KLineColors,
+  candles: OHLCVCandle[],
+  win:     VisibleWindow,
+  bounds:  PriceBounds,
+  panes:   PaneLayout,
+  slotW:   number,
+  hover:   { x: number; y: number },
+  W:       number,
+): void {
+  // Snap horizontal line to the nearest candle centre. Vertical follows mouse.
+  const slotIdx = Math.floor((hover.x - PADDING_LEFT) / slotW)
+  const idx     = Math.max(0, Math.min(candles.length - 1, win.firstIdx + slotIdx))
+  const k       = candles[idx]
+  if (!k) return
+  const xSnap = indexToX(idx, win.firstIdx, slotW)
+
+  ctx.save()
+  ctx.strokeStyle = c.accent
+  ctx.lineWidth   = 1
+  ctx.setLineDash([3, 3])
+  ctx.globalAlpha = 0.6
+
+  // Vertical line at snapped candle x
+  ctx.beginPath()
+  ctx.moveTo(Math.round(xSnap) + 0.5, panes.priceY0)
+  ctx.lineTo(Math.round(xSnap) + 0.5, panes.volumeY1 || panes.priceY1)
+  ctx.stroke()
+
+  // Horizontal line at mouse y (clamped to price pane)
+  const yClamped = Math.max(panes.priceY0, Math.min(panes.priceY1, hover.y))
+  ctx.beginPath()
+  ctx.moveTo(PADDING_LEFT,     Math.round(yClamped) + 0.5)
+  ctx.lineTo(W - PADDING_RIGHT, Math.round(yClamped) + 0.5)
+  ctx.stroke()
+
+  ctx.setLineDash([])
+  ctx.globalAlpha = 1
+
+  // Right-edge price readout — coloured pill
+  const range = bounds.max - bounds.min
+  if (range > 0) {
+    const priceAtY = bounds.max - (yClamped - panes.priceY0) / (panes.priceY1 - panes.priceY0) * range
+    const label    = fmtPrice(priceAtY)
+    ctx.font         = AXIS_FONT
+    ctx.textBaseline = 'middle'
+    ctx.textAlign    = 'left'
+    const textW = ctx.measureText(label).width
+    const padX  = 4, padY = 2
+    ctx.fillStyle = c.accent
+    ctx.fillRect(W - PADDING_RIGHT + 2, yClamped - 7 - padY, textW + padX * 2, 14 + padY * 2)
+    ctx.fillStyle = c.bg.startsWith('rgba(0,0,0,0)') ? '#0d1520' : c.bg
+    ctx.fillText(label, W - PADDING_RIGHT + 2 + padX, yClamped)
+  }
+
+  // Bottom-edge time readout
+  ctx.font         = AXIS_FONT
+  ctx.textBaseline = 'top'
+  ctx.textAlign    = 'center'
+  const tlabel = fmtTime(k.start)
+  const tw = ctx.measureText(tlabel).width
+  ctx.fillStyle = c.accent
+  ctx.fillRect(xSnap - tw / 2 - 4, panes.volumeY1 + 2, tw + 8, 14)
+  ctx.fillStyle = c.bg.startsWith('rgba(0,0,0,0)') ? '#0d1520' : c.bg
+  ctx.fillText(tlabel, xSnap, panes.volumeY1 + 4)
 
   ctx.restore()
 }

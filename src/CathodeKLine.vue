@@ -46,9 +46,22 @@ const canvasEl = ref<HTMLCanvasElement | null>(null)
 const canvasW = ref(0)
 const canvasH = ref(0)
 
-// ── Scroll state (PR 1: locked to right edge; PR 2 will add interactive pan) ──
+// ── Interaction state ─────────────────────────────────────────────────────────
+//
+// scrollX  — px offset, positive = scrolled back in time (older candles).
+//            Anchored to the right edge by computeVisibleWindow.
+// zoomLevel — multiplier on props.slotW; wheel adjusts it. 1.0 = base zoom.
+// hover    — { x, y } in canvas coords, null when not over the chart.
+//            Drives the crosshair overlay drawn in drawKLine.
 
-const scrollX = ref(0)
+const scrollX   = ref(0)
+const zoomLevel = ref(1)
+const hover     = ref<{ x: number; y: number } | null>(null)
+
+const ZOOM_MIN = 0.25
+const ZOOM_MAX = 6.0
+
+const effectiveSlotW = computed(() => Math.max(1, props.slotW * zoomLevel.value))
 
 // ── Three.js ──────────────────────────────────────────────────────────────────
 
@@ -200,12 +213,13 @@ function redraw() {
     if (!canvasEl.value) return
     drawKLine(offCanvas, {
       candles:        props.candles,
-      slotW:          props.slotW,
+      slotW:          effectiveSlotW.value,
       scrollX:        scrollX.value,
       theme:          props.theme,
       glow:           false,
       showVolume:     props.showVolume,
       volumeFraction: props.volumeFraction,
+      hover:          hover.value,
     })
     const ctx2d = canvasEl.value.getContext('2d')
     if (ctx2d) ctx2d.drawImage(offCanvas, 0, 0)
@@ -222,12 +236,13 @@ function redraw() {
 
   drawKLine(offCanvas, {
     candles:        props.candles,
-    slotW:          props.slotW,
+    slotW:          effectiveSlotW.value,
     scrollX:        scrollX.value,
     theme:          props.theme,
     glow:           props.glow,
     showVolume:     props.showVolume,
     volumeFraction: props.volumeFraction,
+    hover:          hover.value,
   })
 
   texture.needsUpdate = true
@@ -245,6 +260,9 @@ watch(() => props.volumeFraction, () => redraw())
 watch(() => props.slotW,          () => redraw())
 watch(() => props.candles,        () => redraw(), { deep: false })
 watch(scrollX,                    () => redraw())
+watch(zoomLevel,                  () => redraw())
+watch(hover,                      () => redraw())
+watch(effectiveSlotW,             () => redraw())
 
 // ── ResizeObserver / IntersectionObserver / window listeners ──────────────────
 
@@ -268,7 +286,109 @@ function onContextRestored() {
   initThree()
 }
 
+// ── Mouse / wheel interaction ─────────────────────────────────────────────────
+
+function canvasCoords(e: MouseEvent): [number, number] {
+  if (!canvasEl.value) return [-1, -1]
+  const rect = canvasEl.value.getBoundingClientRect()
+  return [e.clientX - rect.left, e.clientY - rect.top]
+}
+
+/**
+ * Clamp scrollX to [0, maxScrollX] where max keeps at least one candle
+ * visible at the right edge. Without this clamp, fast pan can run scrollX
+ * past the available range and present a blank chart.
+ */
+function clampScroll(s: number): number {
+  const sw = effectiveSlotW.value
+  if (sw <= 0) return 0
+  const total = props.candles?.length ?? 0
+  // Right edge anchored: scrollX 0 = newest candle on right. Max scroll is
+  // when the OLDEST candle is on the left. Total slots minus visible slots.
+  const visible = Math.max(1, Math.floor((canvasW.value || 1) / sw))
+  const maxScrollSlots = Math.max(0, total - visible)
+  return Math.max(0, Math.min(s, maxScrollSlots * sw))
+}
+
+function onCanvasWheel(e: WheelEvent) {
+  // Trackpad: deltaX is horizontal scroll, deltaY is zoom.
+  // Mouse wheel: shift+deltaY scrolls horizontally, plain deltaY zooms.
+  if (e.deltaX !== 0 || (e.shiftKey && e.deltaY !== 0)) {
+    const dx = e.deltaX !== 0 ? e.deltaX : e.deltaY
+    scrollX.value = clampScroll(scrollX.value + dx)
+    return
+  }
+  if (e.deltaY === 0) return
+  // Zoom — anchor on the candle at the cursor so the user's focus stays
+  // under the cursor as the chart scales. (Otherwise zoom feels detached.)
+  const [cx] = canvasCoords(e)
+  const sw     = effectiveSlotW.value
+  if (cx >= 0 && sw > 0 && props.candles?.length) {
+    // Candle index under cursor before zoom
+    const visible    = Math.max(1, Math.floor((canvasW.value || 1) / sw))
+    const firstIdx   = Math.max(0, props.candles.length - visible - Math.floor(scrollX.value / sw))
+    const idxAtCursor = firstIdx + (cx - 8 /* PADDING_LEFT */) / sw
+    // Apply zoom (negative deltaY = wheel up = zoom in)
+    const factor   = Math.exp(-e.deltaY * 0.0015)
+    const newZoom  = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomLevel.value * factor))
+    zoomLevel.value = newZoom
+    const newSw      = props.slotW * newZoom
+    const newVisible = Math.max(1, Math.floor((canvasW.value || 1) / newSw))
+    // Solve for scrollX such that the same candle stays under the cursor:
+    // idxAtCursor = (props.candles.length - newVisible - Math.floor(scrollX / newSw)) + (cx - 8) / newSw
+    const desiredFirst = idxAtCursor - (cx - 8) / newSw
+    const slotsScrolled = Math.max(0, props.candles.length - newVisible - desiredFirst)
+    scrollX.value = clampScroll(slotsScrolled * newSw)
+  } else {
+    const factor = Math.exp(-e.deltaY * 0.0015)
+    zoomLevel.value = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomLevel.value * factor))
+  }
+}
+
+// Click-drag pan
+let panActive       = false
+let panStartX       = 0
+let panStartScrollX = 0
+
+function onCanvasMouseDown(e: MouseEvent) {
+  if (e.button !== 0) return   // only left-click
+  panActive       = true
+  panStartX       = e.clientX
+  panStartScrollX = scrollX.value
+  // Hide crosshair while panning — it's distracting and the readout would lag
+  hover.value = null
+}
+
+function onGlobalMouseMove(e: MouseEvent) {
+  if (panActive) {
+    // Direct-manipulation feel: grab and drag the chart. Drag RIGHT exposes
+    // older candles on the left (scrollX increases). Drag LEFT pulls newer
+    // candles into view (scrollX decreases — already clamped to 0 at the
+    // right edge so a leftward drag from "newest visible" does nothing).
+    const dx = e.clientX - panStartX
+    scrollX.value = clampScroll(panStartScrollX + dx)
+    return
+  }
+}
+
+function onGlobalMouseUp() {
+  panActive = false
+}
+
+function onCanvasMouseMove(e: MouseEvent) {
+  if (panActive) return
+  const [cx, cy] = canvasCoords(e)
+  if (cx < 0 || cy < 0) { hover.value = null; return }
+  hover.value = { x: cx, y: cy }
+}
+
+function onCanvasMouseLeave() {
+  hover.value = null
+}
+
 onMounted(() => {
+  document.addEventListener('mousemove', onGlobalMouseMove)
+  document.addEventListener('mouseup',   onGlobalMouseUp)
   nextTick(() => {
     initThree()
     if (canvasEl.value) {
@@ -290,6 +410,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  document.removeEventListener('mousemove', onGlobalMouseMove)
+  document.removeEventListener('mouseup',   onGlobalMouseUp)
   canvasEl.value?.removeEventListener('webglcontextlost',     onContextLost)
   canvasEl.value?.removeEventListener('webglcontextrestored', onContextRestored)
   resizeObserver?.disconnect()
@@ -314,6 +436,10 @@ const wrapStyle = computed<CSSProperties>(() => ({
     <canvas
       ref="canvasEl"
       class="cathode-kline-canvas"
+      @wheel.prevent="onCanvasWheel"
+      @mousedown="onCanvasMouseDown"
+      @mousemove="onCanvasMouseMove"
+      @mouseleave="onCanvasMouseLeave"
     />
   </div>
 </template>

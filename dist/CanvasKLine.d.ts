@@ -48,9 +48,9 @@ export declare const KLINE_THEME_COLORS: Record<string, KLineColors>;
 export declare const DEFAULT_VOLUME_FRACTION = 0.18;
 /** Pixel padding around the chart inside the canvas. */
 export declare const PADDING_TOP = 8;
-export declare const PADDING_BOTTOM = 8;
+export declare const PADDING_BOTTOM = 22;
 export declare const PADDING_LEFT = 8;
-export declare const PADDING_RIGHT = 8;
+export declare const PADDING_RIGHT = 56;
 /** Pixel gap between the price pane and the volume pane. */
 export declare const PANE_GAP = 4;
 /** Minimum candle body width (px). Candles narrower than this are 1px lines. */
@@ -105,5 +105,10 @@ export interface DrawKLineOpts {
     showVolume: boolean;
     /** 0..1, fraction of pane reserved for the volume bars. */
     volumeFraction: number;
+    /** Mouse position in canvas coords; null = no crosshair. */
+    hover: {
+        x: number;
+        y: number;
+    } | null;
 }
 export declare function drawKLine(canvas: HTMLCanvasElement, opts: DrawKLineOpts): void;

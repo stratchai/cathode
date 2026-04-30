@@ -112,4 +112,95 @@ test.describe('CathodeKLine', () => {
     expect(await bytes(), 'KLine canvas blanked after curvature drag').toBeGreaterThan(BLANK_FLOOR);
     expect(watch.entries).toEqual([]);
   });
+
+  // ── PR 2: interactions + axes ──────────────────────────────────────────────
+
+  test('mouse wheel zoom changes the rendered canvas content', async ({ page }) => {
+    const watch = collectConsoleErrors(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: /^KLine$/ }).click();
+    const canvas = page.locator('.tab-content:visible canvas').first();
+    await canvas.waitFor({ state: 'visible' });
+    await page.waitForTimeout(400);
+
+    const before = (await canvas.screenshot()).length;
+
+    // Hover over the chart, then send a strong zoom-in wheel event.
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('canvas not found');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    // Multiple wheel events to overcome any debouncing — Playwright dispatches
+    // them as individual events so the chart should accumulate the zoom.
+    for (let i = 0; i < 8; i++) {
+      await page.mouse.wheel(0, -120);
+      await page.waitForTimeout(40);
+    }
+
+    const after = (await canvas.screenshot()).length;
+    expect(after,
+      `canvas screenshot byte size unchanged after zoom (${before} → ${after}) — wheel handler not wired or zoom is a no-op`,
+    ).not.toBe(before);
+    expect(after, 'canvas blanked after zoom').toBeGreaterThan(BLANK_FLOOR);
+
+    expect(watch.entries).toEqual([]);
+  });
+
+  test('click-drag pan scrolls the candle window', async ({ page }) => {
+    const watch = collectConsoleErrors(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: /^KLine$/ }).click();
+    const canvas = page.locator('.tab-content:visible canvas').first();
+    await canvas.waitFor({ state: 'visible' });
+    await page.waitForTimeout(400);
+
+    const before = (await canvas.screenshot()).length;
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('canvas not found');
+    const startX = box.x + box.width  * 0.7;
+    const y      = box.y + box.height * 0.5;
+    await page.mouse.move(startX, y);
+    await page.mouse.down();
+    // Drag right: the chart should pan to show older candles
+    for (let i = 1; i <= 30; i++) {
+      await page.mouse.move(startX + i * 8, y, { steps: 1 });
+    }
+    await page.mouse.up();
+    await page.waitForTimeout(150);
+
+    const after = (await canvas.screenshot()).length;
+    expect(after,
+      `canvas screenshot byte size unchanged after pan (${before} → ${after}) — drag handler not wired`,
+    ).not.toBe(before);
+    expect(after, 'canvas blanked after pan').toBeGreaterThan(BLANK_FLOOR);
+
+    expect(watch.entries).toEqual([]);
+  });
+
+  test('crosshair + axis labels render under hover', async ({ page }) => {
+    const watch = collectConsoleErrors(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: /^KLine$/ }).click();
+    const canvas = page.locator('.tab-content:visible canvas').first();
+    await canvas.waitFor({ state: 'visible' });
+    await page.waitForTimeout(400);
+
+    // Without hover, the canvas already has axes — capture as the baseline
+    const noHover = (await canvas.screenshot()).length;
+
+    // Now hover — adds crosshair lines + price/time pill, should compress to
+    // a different size (more visual content).
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('canvas not found');
+    await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.4);
+    await page.waitForTimeout(120);
+
+    const withHover = (await canvas.screenshot()).length;
+    expect(withHover,
+      `crosshair did not change screenshot bytes (${noHover} → ${withHover})`,
+    ).not.toBe(noHover);
+    expect(withHover, 'canvas blanked when crosshair drawn').toBeGreaterThan(BLANK_FLOOR);
+
+    expect(watch.entries).toEqual([]);
+  });
 });

@@ -98,16 +98,26 @@ naming consistency.
 | 5 | Playwright suite: render smoke + viewport sweep + curvature drag | ✓ done (3 tests) |
 | 6 | Index exports for component + types | ✓ done |
 
-### PR 2 — interactions + integration  ← next
+### PR 2 — interactions + axes  ✓ (2026-04-30)
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | Mouse wheel zoom — slot-width interpolation, anchored on cursor | ✓ done |
+| 2 | Click-drag pan — direct-manipulation feel, drag-right exposes older candles | ✓ done |
+| 3 | Crosshair + price/time pill on hover | ✓ done |
+| 4 | Price axis (right edge) — `niceStep`-spaced labels with horizontal gridlines | ✓ done |
+| 5 | Time axis (bottom edge) — auto-scaled labels (~6 across visible window) | ✓ done |
+| 6 | Playwright tests — wheel/zoom/pan/crosshair byte-floor + console-error checks | ✓ done (3 new tests, 15 total in suite) |
+
+### PR 3 — dashboard ChartPanel integration  ← next
 
 | # | Item | Notes |
 |---|------|-------|
-| 1 | Mouse wheel zoom (slot width interpolation) | |
-| 2 | Click-drag pan (horizontal scroll through candles) | |
-| 3 | Crosshair + price/time readout on hover | |
-| 4 | Price axis (right edge) — labels at major price levels | |
-| 5 | Time axis (bottom edge) — auto-scaled to interval | |
-| 6 | `dashboard/ChartPanel` integration — replace klinecharts | Validate: trade markers, focused-product switching, candle stream updates |
+| 1 | Replace dashboard's klinecharts-based ChartPanel with CathodeKLine | |
+| 2 | Verify trade markers still surface (entry/exit dots overlaid on candles) | |
+| 3 | Verify focused-product switching repopulates candles correctly | |
+| 4 | Verify live candle stream updates push the right edge | |
+| 5 | Drop the `klinecharts` dep from dashboard once parity is confirmed | |
 
 ### Phase 3 → done when
 - CathodeKLine exported from cathode index
