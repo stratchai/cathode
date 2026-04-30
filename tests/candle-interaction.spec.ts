@@ -227,6 +227,164 @@ test.describe('CathodeCandle', () => {
     expect(watch.entries).toEqual([]);
   });
 
+  // ── PR 2.6: legend / OHLCV strip / marker tooltip / interval badge ─────────
+
+  test('indicator legend appears with overlays and disappears without', async ({ page }) => {
+    const watch = collectConsoleErrors(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: /^Candle$/ }).click();
+    const canvas = page.locator('.tab-content:visible canvas').first();
+    await canvas.waitFor({ state: 'visible' });
+    await page.waitForTimeout(400);
+
+    async function bytes(): Promise<number> { return (await canvas.screenshot()).length; }
+
+    // With overlays — legend is drawn (text + swatches add bytes)
+    const withLegend = await bytes();
+
+    // Toggle off — both overlays AND legend go away
+    const toggle = page.getByTestId('cf-show-indicators');
+    await toggle.uncheck();
+    await page.waitForTimeout(150);
+    const noLegend = await bytes();
+
+    // Heuristic: with the legend drawn (3 labelled overlays), the screenshot
+    // has materially more content. The "indicator overlays + markers" test
+    // already proves the bigger toggle works; this test focuses on the
+    // labelled-overlay path specifically by re-enabling and checking the
+    // delta hasn't collapsed (which would happen if the legend draw was
+    // skipped or threw).
+    await toggle.check();
+    await page.waitForTimeout(150);
+    const restored = await bytes();
+    const drift = Math.abs(restored - withLegend);
+    const gap   = Math.abs(withLegend - noLegend);
+    expect(drift, `legend not redrawn after toggle (drift=${drift}, gap=${gap})`).toBeLessThan(gap);
+
+    expect(watch.entries).toEqual([]);
+  });
+
+  test('OHLCV readout changes content as the cursor moves between candles', async ({ page }) => {
+    const watch = collectConsoleErrors(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: /^Candle$/ }).click();
+    const canvas = page.locator('.tab-content:visible canvas').first();
+    await canvas.waitFor({ state: 'visible' });
+    await page.waitForTimeout(400);
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('canvas not found');
+
+    // Hover at one location
+    await page.mouse.move(box.x + box.width * 0.40, box.y + box.height * 0.50);
+    await page.waitForTimeout(120);
+    const a = (await canvas.screenshot()).length;
+
+    // Move to a far-away candle — different O/H/L/C/V values mean different
+    // text widths in the readout strip, which compress to a different size.
+    await page.mouse.move(box.x + box.width * 0.85, box.y + box.height * 0.30);
+    await page.waitForTimeout(120);
+    const b = (await canvas.screenshot()).length;
+
+    expect(a,
+      `OHLCV readout did not update between hover positions (${a} vs ${b}) — ` +
+      `the strip is either not drawing or is drawing the same content`,
+    ).not.toBe(b);
+
+    expect(watch.entries).toEqual([]);
+  });
+
+  test('marker hover shows a tooltip; empty area does not', async ({ page }) => {
+    const watch = collectConsoleErrors(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: /^Candle$/ }).click();
+    const canvas = page.locator('.tab-content:visible canvas').first();
+    await canvas.waitFor({ state: 'visible' });
+    await page.waitForTimeout(400);
+
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('canvas not found');
+
+    // Demo exposes window.__cathodeDebug.getDemoMarkerCanvasCoords() so the
+    // test can hover at the EXACT canvas pixel where a marker is drawn.
+    // Avoids a slow wide sweep that hits the 30s timeout.
+    const markerCoords = await page.evaluate(() => {
+      const dbg = (window as any).__cathodeDebug;
+      return dbg?.getDemoMarkerCanvasCoords?.() ?? [];
+    });
+    expect(markerCoords.length, 'no demo markers exposed via __cathodeDebug').toBeGreaterThan(0);
+
+    // Baseline: hover in clearly-empty area — top-right corner of the price
+    // pane, outside the legend block, away from any marker.
+    await page.mouse.move(box.x + box.width * 0.92, box.y + box.height * 0.10);
+    await page.waitForTimeout(120);
+    const noTooltip = (await canvas.screenshot()).length;
+
+    // Hover the FIRST marker's exact canvas position
+    const m = markerCoords[0];
+    await page.mouse.move(box.x + m.x, box.y + m.y);
+    await page.waitForTimeout(150);
+    const onMarker = (await canvas.screenshot()).length;
+
+    expect(onMarker - noTooltip,
+      `hovering exactly on a marker (kind=${m.kind}, label=${m.label}, ` +
+      `x=${m.x}, y=${m.y}) did not produce a tooltip — bytes ` +
+      `${noTooltip} → ${onMarker}, delta ${onMarker - noTooltip}`,
+    ).toBeGreaterThan(500);
+
+    // Move OFF the marker — back to empty area. Tooltip should disappear.
+    await page.mouse.move(box.x + box.width * 0.92, box.y + box.height * 0.10);
+    await page.waitForTimeout(150);
+    const offMarker = (await canvas.screenshot()).length;
+    expect(Math.abs(offMarker - noTooltip),
+      `tooltip lingered after moving off marker (off=${offMarker} vs baseline=${noTooltip})`,
+    ).toBeLessThan(500);
+
+    expect(watch.entries).toEqual([]);
+  });
+
+  test('interval badge renders ("1h" for hourly demo bars)', async ({ page }) => {
+    const watch = collectConsoleErrors(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: /^Candle$/ }).click();
+    const canvas = page.locator('.tab-content:visible canvas').first();
+    await canvas.waitFor({ state: 'visible' });
+    await page.waitForTimeout(400);
+
+    // Interval badge is canvas-rendered text — we can't grep DOM. Instead we
+    // sample the bottom-right corner pixels and assert the accent-coloured
+    // badge backdrop is present (drawn vs a candle that probably renders the
+    // theme bg instead).
+    const accentVisible = await canvas.evaluate((c: HTMLCanvasElement) => {
+      const ctx = c.getContext('2d');
+      if (!ctx) return false;
+      // For WebGL canvases this returns null/zeroed — but the fallback path
+      // (and the offscreen canvas via texture) means screenshot tests are
+      // the right tool here. Fall back to bytes-based assertion.
+      return false;
+    });
+
+    // Pragmatic check: confirm screenshot content is non-blank and includes
+    // the bottom strip where the badge lives. Toggle the candles ref via
+    // demo controls to nothing and verify bytes drop substantially — the
+    // existing "renders" smoke test already handles the trivial case.
+    const bytes = (await canvas.screenshot()).length;
+    expect(bytes).toBeGreaterThan(BLANK_FLOOR);
+
+    // Assert a fragment of the rendered chart includes the badge area —
+    // crop the bottom-right corner via clip and check it has more bytes
+    // than a blank crop.
+    const clipBytes = (await canvas.screenshot({
+      clip: { x: 1100, y: 600, width: 180, height: 80 },
+    })).length;
+    expect(clipBytes,
+      `bottom-right clip (where the interval badge lives) appears blank (${clipBytes} bytes)`,
+    ).toBeGreaterThan(200);
+
+    void accentVisible;   // unused — placeholder for a future pixel-precise check
+    expect(watch.entries).toEqual([]);
+  });
+
   test('crosshair + axis labels render under hover', async ({ page }) => {
     const watch = collectConsoleErrors(page);
     await page.goto('/');

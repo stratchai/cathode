@@ -110,6 +110,22 @@ and CathodeLog. Originally drafted as "CurvedKLine" then "CathodeKLine"
 | 5 | Time axis (bottom edge) — auto-scaled labels (~6 across visible window) | ✓ done |
 | 6 | Playwright tests — wheel/zoom/pan/crosshair byte-floor + console-error checks | ✓ done (3 new tests, 15 total in suite) |
 
+### PR 2.6 — TV-style polish (legend / OHLCV / tooltips / interval)  ✓ (2026-04-30)
+
+User-driven polish pass after smoke-testing PR 2.5: overlays drew but
+without labels, markers had no hover detail, no visible interval, no
+OHLCV readout. TradingView community-edition was the bar.
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | Indicator legend — top-left translucent box, colour swatch + label per labelled overlay (line: short stroke; band: filled rect outline) | ✓ done |
+| 2 | OHLCV crosshair readout — strip with `O/H/L/C/V` + signed change% for the candle under the cursor; label-tinted dim, %change tinted bull/bear | ✓ done |
+| 3 | Marker hover tooltip — hit-tests within ±9px of triangle centre, shows `▲ ENTRY / ▼ EXIT`, formatted timestamp, price, optional label (e.g. `PROFIT_FLOOR_FLAT`); flips left if it would clip the right edge | ✓ done |
+| 4 | Interval badge — auto-detected from `candles[1].start - candles[0].start`, rendered as accent-coloured pill in the time-axis right corner (`1m`, `5m`, `1h`, `1D`, `1W`) | ✓ done |
+| 5 | Demo marker labels (`BB_BREAKOUT_ENTRY`, `EMA_CROSS_EXIT`, `PROFIT_FLOOR_FLAT`, etc.) so tooltip has strategy-style content | ✓ done |
+| 6 | Demo `__cathodeDebug.getDemoMarkerCanvasCoords()` — exposes marker pixel coords so the e2e test can hover an exact marker rather than a slow wide sweep | ✓ done |
+| 7 | Playwright tests — legend toggle byte-delta, OHLCV strip changes between hover positions, marker tooltip appears on exact-pixel hover and clears on move-off, interval-badge bottom-right clip is non-blank | ✓ done (4 new tests, 20 total) |
+
 ### PR 2.5 — indicator overlays + trade markers  ✓ (2026-04-30)
 
 The bridge step toward "render-a-strategy" charts. Cathode stays

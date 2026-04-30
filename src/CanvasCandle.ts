@@ -452,9 +452,21 @@ export function drawCandle(canvas: HTMLCanvasElement, opts: DrawCandleOpts): voi
   // ── Time axis (bottom edge) ─────────────────────────────────────────────────
   drawTimeAxis(ctx, c, opts.candles, win, opts.slotW, H)
 
-  // ── Crosshair (only when hovering inside the chart area) ────────────────────
+  // ── Interval badge (right side of time axis, e.g. "1h", "5m") ──────────────
+  drawIntervalBadge(ctx, c, opts.candles, W, H)
+
+  // ── Indicator legend (top-left of price pane) ──────────────────────────────
+  if (opts.overlays?.length) {
+    drawLegend(ctx, c, opts.overlays, panes)
+  }
+
+  // ── Crosshair + OHLCV readout + marker tooltip (only when hovering) ────────
   if (opts.hover) {
     drawCrosshair(ctx, c, opts.candles, win, bounds, panes, opts.slotW, opts.hover, W)
+    drawOhlcvReadout(ctx, c, opts.candles, win, opts.slotW, opts.hover, panes, opts.overlays?.length ?? 0)
+    if (opts.markers?.length) {
+      drawMarkerTooltip(ctx, c, opts.markers, opts.candles, win, bounds, panes, opts.slotW, opts.hover, W)
+    }
   }
 
   ctx.restore()
@@ -587,6 +599,308 @@ function applyAlpha(color: string, alpha: number): string {
   if (color.startsWith('rgba')) return color.replace(/[\d.]+\)$/, `${a})`)
   if (color.startsWith('rgb('))  return color.replace(/^rgb\(/, 'rgba(').replace(/\)$/, `,${a})`)
   return color
+}
+
+// ── Indicator legend (top-left of price pane) ────────────────────────────────
+
+function drawLegend(
+  ctx:      CanvasRenderingContext2D,
+  c:        CandleColors,
+  overlays: PriceOverlay[],
+  panes:    PaneLayout,
+): void {
+  // Filter to just labelled overlays — unlabelled ones are presumed
+  // background context (e.g. a calc-only series the consumer doesn't want
+  // listed in the legend).
+  const labelled = overlays.filter(o => !!o.label)
+  if (!labelled.length) return
+
+  ctx.save()
+  ctx.font = AXIS_FONT
+
+  // Compute box dimensions to fit the widest label
+  const PAD_X = 8
+  const PAD_Y = 5
+  const SWATCH_W = 12
+  const SWATCH_GAP = 6
+  const ROW_H = 14
+  let maxLabelW = 0
+  for (const o of labelled) {
+    const w = ctx.measureText(o.label!).width
+    if (w > maxLabelW) maxLabelW = w
+  }
+  const boxW = PAD_X * 2 + SWATCH_W + SWATCH_GAP + maxLabelW
+  const boxH = PAD_Y * 2 + ROW_H * labelled.length
+
+  const boxX = PADDING_LEFT + 4
+  const boxY = panes.priceY0 + 4
+
+  // Translucent backdrop so text reads over candles.
+  ctx.fillStyle = c.bg.startsWith('rgba(0,0,0,0)')
+    ? 'rgba(13,21,32,0.55)'
+    : 'rgba(0,0,0,0.30)'
+  ctx.fillRect(boxX, boxY, boxW, boxH)
+
+  // Each row
+  ctx.textBaseline = 'middle'
+  ctx.textAlign    = 'left'
+  for (let i = 0; i < labelled.length; i++) {
+    const o = labelled[i]
+    const rowY = boxY + PAD_Y + ROW_H * (i + 0.5)
+    // Colour swatch — short line for `line`, filled rect for `band`.
+    const sx = boxX + PAD_X
+    if (o.kind === 'line') {
+      ctx.strokeStyle = o.color
+      ctx.lineWidth   = o.lineWidth ?? 1
+      ctx.setLineDash(o.dashed ? [3, 3] : [])
+      ctx.beginPath()
+      ctx.moveTo(sx,            rowY)
+      ctx.lineTo(sx + SWATCH_W, rowY)
+      ctx.stroke()
+      ctx.setLineDash([])
+    } else {
+      // Band: small rectangle filled + outlined
+      ctx.fillStyle   = applyAlpha(o.color, o.fillAlpha ?? 0.20)
+      ctx.fillRect(sx, rowY - 4, SWATCH_W, 8)
+      ctx.strokeStyle = o.color
+      ctx.lineWidth   = 1
+      ctx.strokeRect(sx + 0.5, rowY - 4 + 0.5, SWATCH_W - 1, 7)
+    }
+    ctx.fillStyle = c.text
+    ctx.fillText(o.label!, sx + SWATCH_W + SWATCH_GAP, rowY)
+  }
+  ctx.restore()
+}
+
+// ── OHLCV readout (TV-style top strip on hover) ──────────────────────────────
+
+function drawOhlcvReadout(
+  ctx:        CanvasRenderingContext2D,
+  c:          CandleColors,
+  candles:    OHLCVCandle[],
+  win:        VisibleWindow,
+  slotW:      number,
+  hover:      { x: number; y: number },
+  panes:      PaneLayout,
+  legendRows: number,
+): void {
+  const slotIdx = Math.floor((hover.x - PADDING_LEFT) / slotW)
+  const idx     = win.firstIdx + slotIdx
+  if (idx < 0 || idx >= candles.length) return
+  const k = candles[idx]
+  if (!k) return
+
+  const change    = k.close - k.open
+  const changePct = k.open !== 0 ? (change / k.open) * 100 : 0
+  const sign      = change >= 0 ? '+' : ''
+  const segments: Array<[label: string, value: string, color?: string]> = [
+    ['O', fmtPrice(k.open),  undefined],
+    ['H', fmtPrice(k.high),  undefined],
+    ['L', fmtPrice(k.low),   undefined],
+    ['C', fmtPrice(k.close), undefined],
+    ['V', fmtVol(k.volume),  undefined],
+    ['',  `${sign}${changePct.toFixed(2)}%`, change >= 0 ? c.candleBull : c.candleBear],
+  ]
+
+  ctx.save()
+  ctx.font         = AXIS_FONT
+  ctx.textBaseline = 'middle'
+  ctx.textAlign    = 'left'
+
+  const PAD_X = 8
+  const PAD_Y = 4
+  const ROW_H = 14
+  // Compute total width
+  let totalW = PAD_X
+  const widths: number[] = []
+  for (const [label, value] of segments) {
+    const piece = label ? `${label} ${value}` : value
+    const w = ctx.measureText(piece).width + 12   // gap between segments
+    widths.push(w)
+    totalW += w
+  }
+  totalW += PAD_X - 12   // remove trailing gap
+
+  // Position below the legend (if any), or at top.
+  const stripY = panes.priceY0 + 4 + (legendRows > 0 ? PAD_Y * 2 + 14 * legendRows + 4 : 0)
+  const stripX = PADDING_LEFT + 4
+
+  // Translucent backdrop
+  ctx.fillStyle = c.bg.startsWith('rgba(0,0,0,0)')
+    ? 'rgba(13,21,32,0.55)'
+    : 'rgba(0,0,0,0.30)'
+  ctx.fillRect(stripX, stripY, totalW, ROW_H + PAD_Y * 2)
+
+  // Render segments
+  let x = stripX + PAD_X
+  for (let i = 0; i < segments.length; i++) {
+    const [label, value, color] = segments[i]
+    ctx.fillStyle = c.text
+    if (label) {
+      // Label tinted dim
+      ctx.globalAlpha = 0.6
+      ctx.fillText(label + ' ', x, stripY + PAD_Y + ROW_H / 2)
+      ctx.globalAlpha = 1
+      x += ctx.measureText(label + ' ').width
+    }
+    if (color) ctx.fillStyle = color
+    ctx.fillText(value, x, stripY + PAD_Y + ROW_H / 2)
+    x += ctx.measureText(value).width + 12
+  }
+  ctx.restore()
+}
+
+/** Compact volume formatter (1234567 → "1.2M"). */
+function fmtVol(v: number): string {
+  if (!isFinite(v) || v <= 0) return '0'
+  if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(2) + 'B'
+  if (v >= 1_000_000)     return (v / 1_000_000).toFixed(2) + 'M'
+  if (v >= 1_000)         return (v / 1_000).toFixed(1) + 'K'
+  return Math.round(v).toString()
+}
+
+// ── Marker hover tooltip ─────────────────────────────────────────────────────
+
+function drawMarkerTooltip(
+  ctx:     CanvasRenderingContext2D,
+  c:       CandleColors,
+  markers: TradeMarker[],
+  candles: OHLCVCandle[],
+  win:     VisibleWindow,
+  bounds:  PriceBounds,
+  panes:   PaneLayout,
+  slotW:   number,
+  hover:   { x: number; y: number },
+  W:       number,
+): void {
+  if (!candles.length) return
+  const interval = candles.length > 1 ? candles[1].start - candles[0].start : 60_000
+  const tol      = Math.max(1, interval * 0.5)
+  const last     = Math.min(candles.length, win.firstIdx + win.count)
+
+  // Hit-test: marker triangles are 7px half-width / half-height. Pick the
+  // first marker whose bounding box contains the hover point.
+  const HIT_R = 9   // slightly generous to reduce miss frustration
+  let hit: { m: TradeMarker; x: number; y: number } | null = null
+  for (const m of markers) {
+    // Find candle index by timestamp
+    let lo = 0, hi = candles.length - 1, idx = -1
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1
+      const d   = candles[mid].start - m.timestamp
+      if (Math.abs(d) <= tol) { idx = mid; break }
+      if (d < 0) lo = mid + 1
+      else       hi = mid - 1
+    }
+    if (idx < 0 || idx < win.firstIdx || idx >= last) continue
+    const x = indexToX(idx, win.firstIdx, slotW)
+    const y = priceToY(m.price, bounds, panes.priceY0, panes.priceY1)
+    if (Math.abs(hover.x - x) <= HIT_R && Math.abs(hover.y - y) <= HIT_R) {
+      hit = { m, x, y }
+      break
+    }
+  }
+  if (!hit) return
+
+  // Build tooltip lines
+  const tsLabel = fmtTime(hit.m.timestamp)
+  const lines = [
+    `${hit.m.kind === 'entry' ? '▲ ENTRY' : '▼ EXIT'}`,
+    `${tsLabel}`,
+    `@ ${fmtPrice(hit.m.price)}`,
+  ]
+  if (hit.m.label) lines.push(hit.m.label)
+
+  ctx.save()
+  ctx.font         = AXIS_FONT
+  ctx.textBaseline = 'top'
+  ctx.textAlign    = 'left'
+
+  const PAD = 6
+  const ROW_H = 14
+  let maxW = 0
+  for (const l of lines) {
+    const w = ctx.measureText(l).width
+    if (w > maxW) maxW = w
+  }
+  const boxW = maxW + PAD * 2
+  const boxH = lines.length * ROW_H + PAD * 2
+
+  // Place to the right of the marker by default, flip left if it would clip
+  // off the right edge of the chart area.
+  let boxX = hit.x + 12
+  if (boxX + boxW > W - PADDING_RIGHT) boxX = hit.x - 12 - boxW
+  let boxY = hit.y - boxH / 2
+  if (boxY < panes.priceY0) boxY = panes.priceY0
+  if (boxY + boxH > panes.priceY1) boxY = panes.priceY1 - boxH
+
+  // Backdrop with marker-coloured border
+  ctx.fillStyle   = c.bg.startsWith('rgba(0,0,0,0)') ? 'rgba(13,21,32,0.92)' : 'rgba(0,0,0,0.78)'
+  ctx.strokeStyle = hit.m.kind === 'entry' ? c.markerEntry : c.markerExit
+  ctx.lineWidth   = 1
+  ctx.fillRect(boxX, boxY, boxW, boxH)
+  ctx.strokeRect(boxX + 0.5, boxY + 0.5, boxW - 1, boxH - 1)
+
+  // Lines
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i]
+    ctx.fillStyle = i === 0
+      ? (hit.m.kind === 'entry' ? c.markerEntry : c.markerExit)
+      : c.text
+    ctx.fillText(l, boxX + PAD, boxY + PAD + i * ROW_H)
+  }
+  ctx.restore()
+}
+
+// ── Interval badge (right side of time axis) ─────────────────────────────────
+
+function drawIntervalBadge(
+  ctx:     CanvasRenderingContext2D,
+  c:       CandleColors,
+  candles: OHLCVCandle[],
+  W:       number,
+  H:       number,
+): void {
+  if (candles.length < 2) return
+  const intervalMs = candles[1].start - candles[0].start
+  const label = formatInterval(intervalMs)
+  if (!label) return
+
+  ctx.save()
+  ctx.font         = AXIS_FONT
+  ctx.textBaseline = 'top'
+  ctx.textAlign    = 'right'
+
+  const PAD_X = 6
+  const PAD_Y = 3
+  const tw = ctx.measureText(label).width
+  const x  = W - PADDING_RIGHT - PAD_X
+  const y  = H - PADDING_BOTTOM + 4
+  // Backdrop pill
+  ctx.fillStyle = c.accent
+  ctx.fillRect(x - tw - PAD_X, y - PAD_Y, tw + PAD_X * 2, 14 + PAD_Y * 2)
+  // Text in bg colour for contrast
+  ctx.fillStyle = c.bg.startsWith('rgba(0,0,0,0)') ? '#0d1520' : c.bg
+  ctx.fillText(label, x, y)
+  ctx.restore()
+}
+
+/** Format a bar interval in ms to a TV-style abbreviation. Returns "" for
+ *  unrecognised durations (very short / non-uniform candles). */
+function formatInterval(ms: number): string {
+  if (ms <= 0 || !isFinite(ms)) return ''
+  const SEC = 1000
+  const MIN = 60 * SEC
+  const HR  = 60 * MIN
+  const DAY = 24 * HR
+  const WEEK = 7 * DAY
+  if (ms >= WEEK && ms % WEEK === 0) return (ms / WEEK) + 'W'
+  if (ms >= DAY  && ms % DAY  === 0) return (ms / DAY)  + 'D'
+  if (ms >= HR   && ms % HR   === 0) return (ms / HR)   + 'h'
+  if (ms >= MIN  && ms % MIN  === 0) return (ms / MIN)  + 'm'
+  if (ms >= SEC  && ms % SEC  === 0) return (ms / SEC)  + 's'
+  // Fall back: round to the nearest minute
+  return Math.round(ms / MIN) + 'm'
 }
 
 // ── Trade markers ─────────────────────────────────────────────────────────────

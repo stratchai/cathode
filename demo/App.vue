@@ -336,21 +336,74 @@ const demoOverlays = computed<PriceOverlay[]>(() => {
   ]
 })
 
-// Fake trade markers — sprinkle a few entry/exit pairs across the visible window.
-// Real consumers pass exact (timestamp, price) tuples from their trade history.
+// Fake trade markers — three entry/exit pairs with strategy-style labels so
+// the marker hover tooltip has interesting content. Spread across the most
+// recent ~120 candles so they sit inside the default visible window
+// (default slotW=8 fits ~150 candles anchored on the right edge).
+// Real consumers pass exact (timestamp, price) tuples from their trade
+// history with the strategy's actual entry/exit reason.
 const demoMarkers = computed<TradeMarker[]>(() => {
   const cs = demoCandles.value
-  if (cs.length < 60) return []
+  if (cs.length < 130) return []
   const pick = (i: number) => cs[i]
   return [
-    { timestamp: pick(cs.length - 240).start, price: pick(cs.length - 240).low,  kind: 'entry' },
-    { timestamp: pick(cs.length - 200).start, price: pick(cs.length - 200).high, kind: 'exit'  },
-    { timestamp: pick(cs.length - 160).start, price: pick(cs.length - 160).low,  kind: 'entry' },
-    { timestamp: pick(cs.length - 120).start, price: pick(cs.length - 120).high, kind: 'exit'  },
-    { timestamp: pick(cs.length -  80).start, price: pick(cs.length -  80).low,  kind: 'entry' },
-    { timestamp: pick(cs.length -  40).start, price: pick(cs.length -  40).high, kind: 'exit'  },
+    { timestamp: pick(cs.length - 120).start, price: pick(cs.length - 120).low,  kind: 'entry', label: 'BB_BREAKOUT_ENTRY' },
+    { timestamp: pick(cs.length - 100).start, price: pick(cs.length - 100).high, kind: 'exit',  label: 'PROFIT_FLOOR'      },
+    { timestamp: pick(cs.length -  80).start, price: pick(cs.length -  80).low,  kind: 'entry', label: 'EMA_CROSS_ENTRY'   },
+    { timestamp: pick(cs.length -  60).start, price: pick(cs.length -  60).high, kind: 'exit',  label: 'EMA_CROSS_EXIT'    },
+    { timestamp: pick(cs.length -  40).start, price: pick(cs.length -  40).low,  kind: 'entry', label: 'ADX_PSAR_ENTRY'    },
+    { timestamp: pick(cs.length -  20).start, price: pick(cs.length -  20).high, kind: 'exit',  label: 'PROFIT_FLOOR_FLAT' },
   ]
 })
+
+// Expose marker geometry for e2e tests — lets Playwright hover the EXACT
+// pixel where a marker is drawn, instead of doing a wide sweep that's slow
+// and flaky. Production builds would tree-shake this away.
+if (typeof window !== 'undefined') {
+  ;(window as any).__cathodeDebug = {
+    getDemoMarkerCanvasCoords(): Array<{ x: number; y: number; kind: string; label: string }> {
+      const cs = demoCandles.value
+      const ms = demoMarkers.value
+      if (!cs.length || !ms.length) return []
+      // Find the canvas element — the candle tab's canvas
+      const canvas = document.querySelector('.tab-content:not([style*="display: none"]) canvas') as HTMLCanvasElement | null
+      if (!canvas) return []
+      const W = canvas.width / (window.devicePixelRatio || 1)
+      const H = canvas.height / (window.devicePixelRatio || 1)
+      // Mirror CanvasCandle's geometry: PADDING_LEFT=8, PADDING_RIGHT=56,
+      // PADDING_TOP=8, PADDING_BOTTOM=22, default slotW=8.
+      const PADDING_LEFT = 8, PADDING_RIGHT = 56, PADDING_TOP = 8, PADDING_BOTTOM = 22
+      const slotW = 8
+      const usableW = W - PADDING_LEFT - PADDING_RIGHT
+      const visible = Math.max(1, Math.floor(usableW / slotW))
+      const firstIdx = Math.max(0, cs.length - visible)
+      // Price bounds across visible window
+      let lo = Infinity, hi = -Infinity
+      for (let i = firstIdx; i < cs.length; i++) {
+        if (cs[i].low  < lo) lo = cs[i].low
+        if (cs[i].high > hi) hi = cs[i].high
+      }
+      const pad = (hi - lo) * 0.04
+      lo -= pad; hi += pad
+      const priceY0 = PADDING_TOP
+      const priceY1 = PADDING_TOP + (H - PADDING_TOP - PADDING_BOTTOM - 4) * (1 - 0.18)
+      const out: Array<{ x: number; y: number; kind: string; label: string }> = []
+      for (const m of ms) {
+        // Find candle by timestamp ±0.5 interval
+        const interval = cs[1].start - cs[0].start
+        let idx = -1
+        for (let i = 0; i < cs.length; i++) {
+          if (Math.abs(cs[i].start - m.timestamp) <= interval * 0.5) { idx = i; break }
+        }
+        if (idx < firstIdx || idx >= cs.length) continue
+        const x = PADDING_LEFT + (idx - firstIdx + 0.5) * slotW
+        const y = priceY0 + (1 - (m.price - lo) / (hi - lo)) * (priceY1 - priceY0)
+        out.push({ x, y, kind: m.kind, label: m.label || '' })
+      }
+      return out
+    },
+  }
+}
 function seedLogEntries() {
   const out: LogEntry[] = []
   const base = Date.now() - 1000 * 60 * 30
