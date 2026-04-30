@@ -1,5 +1,5 @@
-import { defineComponent as Ue, ref as W, reactive as rt, computed as K, watch as O, inject as lt, nextTick as Le, onMounted as Ve, onUnmounted as Ke, openBlock as re, createElementBlock as se, normalizeStyle as ye, createElementVNode as J, withModifiers as Re, withKeys as el, createCommentVNode as Se, toDisplayString as Me, provide as kt, renderSlot as ut, createVNode as tl, Transition as ll, withCtx as nl, Fragment as ol, renderList as al, createTextVNode as il, normalizeClass as rl, withDirectives as sl, vShow as cl } from "vue";
-import * as $ from "three";
+import { defineComponent as Ue, ref as W, reactive as rt, computed as K, watch as $, inject as lt, nextTick as Le, onMounted as Ve, onUnmounted as Ke, openBlock as re, createElementBlock as se, normalizeStyle as ye, createElementVNode as J, withModifiers as Re, withKeys as el, createCommentVNode as Se, toDisplayString as Me, provide as kt, renderSlot as ut, createVNode as tl, Transition as ll, withCtx as nl, Fragment as ol, renderList as al, createTextVNode as il, normalizeClass as rl, withDirectives as sl, vShow as cl } from "vue";
+import * as O from "three";
 const $e = {
   none: {
     // bg fully transparent so the parent (glass CathodeContainer) shows
@@ -281,11 +281,11 @@ const vl = ["value"], ml = ["disabled"], hl = ["disabled"], gl = `
       }
       return o;
     });
-    O(q, () => {
+    $(q, () => {
       g.value = 0, m.value = null;
-    }), O(F, () => {
+    }), $(F, () => {
       h.value = Math.min(h.value, F.value);
-    }), O(V, () => {
+    }), $(V, () => {
       g.value = Math.min(g.value, V.value);
     });
     function ke(o) {
@@ -317,13 +317,13 @@ const vl = ["value"], ml = ["disabled"], hl = ["disabled"], gl = `
       P && (E && (B = !0), P = !1), H && (H = !1, B = !0, n("column-resized"));
     }
     const ve = W(null), Z = W(null), Pt = lt("cathodeResetTick", W(0));
-    O(Pt, () => He());
+    $(Pt, () => He());
     let te = null, ze = !1, nt, pt, Ie, me, ue;
     function wt() {
       if (!(!Z.value || !ve.value)) {
         ue = document.createElement("canvas");
         try {
-          te = new $.WebGLRenderer({ canvas: Z.value, antialias: !1, alpha: !0 });
+          te = new O.WebGLRenderer({ canvas: Z.value, antialias: !1, alpha: !0 });
         } catch {
           ze = !0;
         }
@@ -331,18 +331,18 @@ const vl = ["value"], ml = ["disabled"], hl = ["disabled"], gl = `
           Ae();
           return;
         }
-        te.setPixelRatio(1), te.setClearColor(0, 0), nt = new $.Scene(), pt = new $.OrthographicCamera(-1, 1, 1, -1, 0, 1), me = new $.CanvasTexture(ue), me.minFilter = $.LinearFilter, me.magFilter = $.LinearFilter, Ie = new $.ShaderMaterial({
+        te.setPixelRatio(1), te.setClearColor(0, 0), nt = new O.Scene(), pt = new O.OrthographicCamera(-1, 1, 1, -1, 0, 1), me = new O.CanvasTexture(ue), me.minFilter = O.LinearFilter, me.magFilter = O.LinearFilter, Ie = new O.ShaderMaterial({
           uniforms: {
             uTex: { value: me },
             uStrength: { value: 0 },
             uScanlines: { value: 1 },
             uVignette: { value: 1 },
-            uBezel: { value: new $.Color(0) }
+            uBezel: { value: new O.Color(0) }
           },
           vertexShader: gl,
           fragmentShader: pl,
           transparent: !0
-        }), nt.add(new $.Mesh(new $.PlaneGeometry(2, 2), Ie)), Ae();
+        }), nt.add(new O.Mesh(new O.PlaneGeometry(2, 2), Ie)), Ae();
       }
     }
     function Ae() {
@@ -350,7 +350,7 @@ const vl = ["value"], ml = ["disabled"], hl = ["disabled"], gl = `
       const o = ve.value.clientWidth, i = ve.value.clientHeight - (e.pagination ? wl : 0);
       if (!o || !i) return;
       const b = ue.width !== o || ue.height !== i;
-      ue.width = o, ue.height = i, y.value = o, S.value = i, h.value = Math.max(0, Math.min(F.value, h.value)), g.value = Math.max(0, Math.min(V.value, g.value)), te ? (b && me && (me.dispose(), me = new $.CanvasTexture(ue), me.minFilter = $.LinearFilter, me.magFilter = $.LinearFilter, Ie && (Ie.uniforms.uTex.value = me)), te.setPixelRatio(window.devicePixelRatio || 1), te.setSize(o, i)) : Z.value && (Z.value.width = o, Z.value.height = i, Z.value.style.width = o + "px", Z.value.style.height = i + "px"), fe();
+      ue.width = o, ue.height = i, y.value = o, S.value = i, h.value = Math.max(0, Math.min(F.value, h.value)), g.value = Math.max(0, Math.min(V.value, g.value)), te ? (b && me && (me.dispose(), me = new O.CanvasTexture(ue), me.minFilter = O.LinearFilter, me.magFilter = O.LinearFilter, Ie && (Ie.uniforms.uTex.value = me)), te.setPixelRatio(window.devicePixelRatio || 1), te.setSize(o, i)) : Z.value && (Z.value.width = o, Z.value.height = i, Z.value.style.width = o + "px", Z.value.style.height = i + "px"), fe();
     }
     function fe() {
       var b, T, I, L, z, X, le, ne;
@@ -634,10 +634,10 @@ const vl = ["value"], ml = ["disabled"], hl = ["disabled"], gl = `
         u.value = "", g.value = 0, m.value = null, p.value = null;
       }
     };
-    O(
+    $(
       [q, () => r.value, w, g, d, m],
       () => Le(fe)
-    ), O(() => e.theme, () => fe()), O(() => e.curvature, () => Le(Ae)), O(() => e.scanlines, () => fe()), O(() => e.glow, () => fe()), O(m, (o) => {
+    ), $(() => e.theme, () => fe()), $(() => e.curvature, () => Le(Ae)), $(() => e.scanlines, () => fe()), $(() => e.glow, () => fe()), $(m, (o) => {
       if (!o) return;
       const i = q.value[o.row], b = w.value[o.col];
       i && b && n("cell-selected", { data: i, row: o.row, col: o.col, colId: b.colId });
@@ -1031,9 +1031,9 @@ const Ll = `
       });
     }
     const h = K(() => Il(S.value.length)), d = K(() => Math.max(0, h.value - u.value));
-    O(d, () => {
+    $(d, () => {
       c.value ? v.value = d.value : v.value = Math.min(v.value, d.value);
-    }), O(
+    }), $(
       [s, r, () => e.showTimestamps, () => e.wordWrap, x],
       () => {
         g(), Le(V);
@@ -1045,7 +1045,7 @@ const Ll = `
       if (!(!a.value || !n.value)) {
         w = document.createElement("canvas");
         try {
-          m = new $.WebGLRenderer({ canvas: a.value, antialias: !1, alpha: !0 });
+          m = new O.WebGLRenderer({ canvas: a.value, antialias: !1, alpha: !0 });
         } catch {
           p = !0;
         }
@@ -1053,7 +1053,7 @@ const Ll = `
           Y();
           return;
         }
-        m.setPixelRatio(1), m.setClearColor(0, 0), M = new $.Scene(), _ = new $.OrthographicCamera(-1, 1, 1, -1, 0, 1), C = new $.CanvasTexture(w), C.minFilter = $.LinearFilter, C.magFilter = $.LinearFilter, k = new $.ShaderMaterial({
+        m.setPixelRatio(1), m.setClearColor(0, 0), M = new O.Scene(), _ = new O.OrthographicCamera(-1, 1, 1, -1, 0, 1), C = new O.CanvasTexture(w), C.minFilter = O.LinearFilter, C.magFilter = O.LinearFilter, k = new O.ShaderMaterial({
           uniforms: {
             uTex: { value: C },
             uStrength: { value: 0 },
@@ -1063,7 +1063,7 @@ const Ll = `
           vertexShader: Ll,
           fragmentShader: Dl,
           transparent: !0
-        }), M.add(new $.Mesh(new $.PlaneGeometry(2, 2), k)), Y();
+        }), M.add(new O.Mesh(new O.PlaneGeometry(2, 2), k)), Y();
       }
     }
     function Y() {
@@ -1071,7 +1071,7 @@ const Ll = `
       const E = n.value.clientWidth, A = n.value.clientHeight;
       if (!E || !A) return;
       const Q = w.width !== E || w.height !== A;
-      Q && (w.width = E, w.height = A, r.value = E, u.value = A, g(), m ? (Q && C && (C.dispose(), C = new $.CanvasTexture(w), C.minFilter = $.LinearFilter, C.magFilter = $.LinearFilter, k && (k.uniforms.uTex.value = C)), m.setPixelRatio(window.devicePixelRatio || 1), m.setSize(E, A)) : a.value && (a.value.width = E, a.value.height = A, a.value.style.width = E + "px", a.value.style.height = A + "px"), c.value && (v.value = Math.max(0, h.value - u.value)), V());
+      Q && (w.width = E, w.height = A, r.value = E, u.value = A, g(), m ? (Q && C && (C.dispose(), C = new O.CanvasTexture(w), C.minFilter = O.LinearFilter, C.magFilter = O.LinearFilter, k && (k.uniforms.uTex.value = C)), m.setPixelRatio(window.devicePixelRatio || 1), m.setSize(E, A)) : a.value && (a.value.width = E, a.value.height = A, a.value.style.width = E + "px", a.value.style.height = A + "px"), c.value && (v.value = Math.max(0, h.value - u.value)), V());
     }
     function V() {
       if (!(w != null && w.width)) return;
@@ -1102,7 +1102,7 @@ const Ll = `
         hoveredLine: f.value
       }), C.needsUpdate = !0, m.render(M, _);
     }
-    O(() => e.theme, () => V()), O(() => e.curvature, () => V()), O(() => e.scanlines, () => V()), O(() => e.glow, () => V()), O(v, () => V()), O(f, () => V());
+    $(() => e.theme, () => V()), $(() => e.curvature, () => V()), $(() => e.scanlines, () => V()), $(() => e.glow, () => V()), $(v, () => V()), $(f, () => V());
     function G(E) {
       if (!a.value) return [-1, -1];
       const A = a.value.getBoundingClientRect();
@@ -1150,7 +1150,7 @@ const Ll = `
     });
     let j = null, ee = null, D = 0;
     const B = lt("cathodeResetTick", W(0));
-    O(B, () => P());
+    $(B, () => P());
     function P() {
       cancelAnimationFrame(D), D = requestAnimationFrame(Y);
     }
@@ -1631,16 +1631,20 @@ const Ft = 0.25, _t = 6, jl = `
     volumeFraction: { default: Rl },
     slotW: { default: 8 },
     overlays: {},
-    markers: {}
+    markers: {},
+    flat: { type: Boolean, default: !1 }
   },
   setup(t) {
     const l = t, e = W(null), n = W(null), a = W(0), r = W(0), u = W(0), v = W(1), f = W(null), c = K(() => Math.max(1, l.slotW * v.value));
     let s = null, x = !1, y, S, g, h, d;
     function m() {
       if (!(!n.value || !e.value)) {
-        d = document.createElement("canvas");
+        if (d = document.createElement("canvas"), l.flat) {
+          x = !0, p();
+          return;
+        }
         try {
-          s = new $.WebGLRenderer({ canvas: n.value, antialias: !1, alpha: !0 });
+          s = new O.WebGLRenderer({ canvas: n.value, antialias: !1, alpha: !0 });
         } catch {
           x = !0;
         }
@@ -1648,7 +1652,7 @@ const Ft = 0.25, _t = 6, jl = `
           p();
           return;
         }
-        s.setPixelRatio(1), s.setClearColor(0, 0), y = new $.Scene(), S = new $.OrthographicCamera(-1, 1, 1, -1, 0, 1), h = new $.CanvasTexture(d), h.minFilter = $.LinearFilter, h.magFilter = $.LinearFilter, g = new $.ShaderMaterial({
+        s.setPixelRatio(1), s.setClearColor(0, 0), y = new O.Scene(), S = new O.OrthographicCamera(-1, 1, 1, -1, 0, 1), h = new O.CanvasTexture(d), h.minFilter = O.LinearFilter, h.magFilter = O.LinearFilter, g = new O.ShaderMaterial({
           uniforms: {
             uTex: { value: h },
             uStrength: { value: 0 },
@@ -1658,13 +1662,13 @@ const Ft = 0.25, _t = 6, jl = `
           vertexShader: jl,
           fragmentShader: Zl,
           transparent: !0
-        }), y.add(new $.Mesh(new $.PlaneGeometry(2, 2), g)), p();
+        }), y.add(new O.Mesh(new O.PlaneGeometry(2, 2), g)), p();
       }
     }
     function p() {
       if (!e.value || !s && !x) return;
       const D = e.value.clientWidth, B = e.value.clientHeight;
-      !D || !B || !(d.width !== D || d.height !== B) || (d.width = D, d.height = B, a.value = D, r.value = B, s ? (h && (h.dispose(), h = new $.CanvasTexture(d), h.minFilter = $.LinearFilter, h.magFilter = $.LinearFilter, g && (g.uniforms.uTex.value = h)), s.setPixelRatio(window.devicePixelRatio || 1), s.setSize(D, B)) : n.value && (n.value.width = D, n.value.height = B, n.value.style.width = D + "px", n.value.style.height = B + "px"), M());
+      !D || !B || !(d.width !== D || d.height !== B) || (d.width = D, d.height = B, a.value = D, r.value = B, s ? (h && (h.dispose(), h = new O.CanvasTexture(d), h.minFilter = O.LinearFilter, h.magFilter = O.LinearFilter, g && (g.uniforms.uTex.value = h)), s.setPixelRatio(window.devicePixelRatio || 1), s.setSize(D, B)) : n.value && (n.value.width = D, n.value.height = B, n.value.style.width = D + "px", n.value.style.height = B + "px"), M());
     }
     function M() {
       if (!(d != null && d.width)) return;
@@ -1701,10 +1705,12 @@ const Ft = 0.25, _t = 6, jl = `
         markers: l.markers
       }), h.needsUpdate = !0, s.render(y, S);
     }
-    O(() => l.theme, () => M()), O(() => l.curvature, () => M()), O(() => l.scanlines, () => M()), O(() => l.glow, () => M()), O(() => l.showVolume, () => M()), O(() => l.volumeFraction, () => M()), O(() => l.slotW, () => M()), O(() => l.candles, () => M(), { deep: !1 }), O(() => l.overlays, () => M(), { deep: !1 }), O(() => l.markers, () => M(), { deep: !1 }), O(u, () => M()), O(v, () => M()), O(f, () => M()), O(c, () => M());
+    $(() => l.theme, () => M()), $(() => l.curvature, () => M()), $(() => l.scanlines, () => M()), $(() => l.glow, () => M()), $(() => l.showVolume, () => M()), $(() => l.volumeFraction, () => M()), $(() => l.slotW, () => M()), $(() => l.candles, () => M(), { deep: !1 }), $(() => l.overlays, () => M(), { deep: !1 }), $(() => l.markers, () => M(), { deep: !1 }), $(() => l.flat, () => {
+      console.warn("[CathodeCandle] `flat` is mount-time only; remount the component (e.g. with :key) to switch pipelines.");
+    }), $(u, () => M()), $(v, () => M()), $(f, () => M()), $(c, () => M());
     let _ = null, k = null, C = 0;
     const w = lt("cathodeResetTick", W(0));
-    O(w, () => F());
+    $(w, () => F());
     function F() {
       cancelAnimationFrame(C), C = requestAnimationFrame(p);
     }
@@ -1802,7 +1808,7 @@ const Ft = 0.25, _t = 6, jl = `
       }, null, 544)
     ], 4));
   }
-}), Cn = /* @__PURE__ */ qe(Jl, [["__scopeId", "data-v-f6f8dffc"]]), gt = W(0), ft = 28, Pe = 12;
+}), Cn = /* @__PURE__ */ qe(Jl, [["__scopeId", "data-v-a6eef348"]]), gt = W(0), ft = 28, Pe = 12;
 let dt = 10, et = "cathode.layout", tt = !1;
 const ie = W({});
 function Ql(t, l = "cathode.layout") {
@@ -2037,7 +2043,7 @@ const rn = { class: "ws-toolbar" }, sn = {
       p = !1, w.value = "", document.removeEventListener("mousemove", Y), document.removeEventListener("mouseup", V), G.value++;
     }
     const G = W(0);
-    O(gt, () => {
+    $(gt, () => {
       G.value++;
     }), Ke(() => {
       var R;
@@ -2074,7 +2080,7 @@ const rn = { class: "ws-toolbar" }, sn = {
         H.style.fontSize = "", H.style.lineHeight = "", delete H.dataset.origFs, delete H.dataset.origLh;
       });
     }
-    O(() => l.curvature, (R) => {
+    $(() => l.curvature, (R) => {
       (R ?? 0) === 0 ? oe() : N();
     }), Ve(() => {
       var R;

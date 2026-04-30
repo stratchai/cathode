@@ -30,6 +30,13 @@ const props = withDefaults(defineProps<{
   overlays?:      PriceOverlay[]
   /** Trade entry/exit annotations at (timestamp, price) points. */
   markers?:       TradeMarker[]
+  /**
+   * Force the 2D-canvas fallback path — skip Three.js + barrel shader
+   * entirely. Use for mini-charts: dashboards rendering many cards at
+   * once exceed Chrome's ~16 WebGL-context cap, evicting visible charts.
+   * The barrel effect is also barely legible at small sizes.
+   */
+  flat?:          boolean
 }>(), {
   theme:          'none',
   curvature:      25,
@@ -38,6 +45,7 @@ const props = withDefaults(defineProps<{
   showVolume:     true,
   volumeFraction: DEFAULT_VOLUME_FRACTION,
   slotW:          8,
+  flat:           false,
 })
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
@@ -128,6 +136,15 @@ function initThree() {
   if (!canvasEl.value || !wrapEl.value) return
 
   offCanvas = document.createElement('canvas')
+
+  // `flat` opts out of WebGL entirely — same render path as the WebGL
+  // fallback, intentionally chosen to avoid context-cap eviction when
+  // many small charts mount at once.
+  if (props.flat) {
+    webglFailed = true
+    sizeToContainer()
+    return
+  }
 
   try {
     renderer = new THREE.WebGLRenderer({ canvas: canvasEl.value, antialias: false, alpha: true })
@@ -269,6 +286,14 @@ watch(() => props.slotW,          () => redraw())
 watch(() => props.candles,        () => redraw(), { deep: false })
 watch(() => props.overlays,       () => redraw(), { deep: false })
 watch(() => props.markers,        () => redraw(), { deep: false })
+
+// `flat` is a mount-time decision — once a canvas element has been used
+// for WebGL the browser locks it (getContext('2d') returns null), so a
+// pipeline swap requires remounting the component (via :key from the
+// consumer). The watcher exists only to surface the constraint clearly.
+watch(() => props.flat, () => {
+  console.warn('[CathodeCandle] `flat` is mount-time only; remount the component (e.g. with :key) to switch pipelines.')
+})
 watch(scrollX,                    () => redraw())
 watch(zoomLevel,                  () => redraw())
 watch(hover,                      () => redraw())

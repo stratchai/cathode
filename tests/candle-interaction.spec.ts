@@ -422,6 +422,32 @@ test.describe('CathodeCandle', () => {
     expect(watch.entries).toEqual([]);
   });
 
+  test('flat mode skips Three.js — non-blank, differs from WebGL output, no GL errors', async ({ page }) => {
+    const watch = collectConsoleErrors(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: /^Candle$/ }).click();
+    const canvas = page.locator('.tab-content:visible canvas').first();
+    await canvas.waitFor({ state: 'visible' });
+    await page.waitForTimeout(400);
+
+    // WebGL pipeline (default) — barrel shader applied; capture for comparison
+    const glBytes = (await canvas.screenshot()).length;
+    expect(glBytes, 'WebGL-pipeline canvas blank').toBeGreaterThan(BLANK_FLOOR);
+
+    // Switch to flat — the watcher should tear down Three.js and re-init via
+    // the 2D path. Output should still render but visually differ (no barrel).
+    await page.getByTestId('cf-flat').check();
+    await page.waitForTimeout(350);
+
+    const flatBytes = (await canvas.screenshot()).length;
+    expect(flatBytes, 'flat-mode canvas blank').toBeGreaterThan(BLANK_FLOOR);
+    expect(flatBytes,
+      `flat mode produced same screenshot bytes as WebGL (${glBytes} → ${flatBytes}) — pipeline did not switch`,
+    ).not.toBe(glBytes);
+
+    expect(watch.entries).toEqual([]);
+  });
+
   test('crosshair + axis labels render under hover', async ({ page }) => {
     const watch = collectConsoleErrors(page);
     await page.goto('/');

@@ -135,6 +135,9 @@ const gridKey    = ref(0)
 // Candle-tab toggle — turns the BB/EMA overlays + trade markers off, used by
 // the e2e test to verify overlays actually drew (compare bytes on vs off).
 const showIndicators = ref(true)
+// Force the 2D pipeline (skip Three.js + barrel shader). Mirrors the prop
+// dashboards use for mini-charts to dodge Chrome's WebGL-context cap.
+const flat            = ref(false)
 
 watch(activeTab,  (tab) => { if (tab === 'grid') gridKey.value++ })
 // NOTE: do NOT bump gridKey on curvature change. It used to work as a brute-
@@ -457,6 +460,10 @@ seedLogEntries()
         <input type="checkbox" v-model="showIndicators" data-testid="cf-show-indicators" />
         Indicators
       </label>
+      <label v-if="activeTab === 'candle'">
+        <input type="checkbox" v-model="flat" data-testid="cf-flat" />
+        Flat (no GL)
+      </label>
 
       <div class="demo-spacer" />
 
@@ -502,6 +509,7 @@ seedLogEntries()
     <!-- ── Candle tab — OHLCV candlestick chart with the barrel pipeline ─── -->
     <div v-show="activeTab === 'candle'" class="tab-content">
       <CathodeCandle
+        :key="`cf-${flat}`"
         :candles="demoCandles"
         :overlays="showIndicators ? demoOverlays : []"
         :markers="showIndicators ? demoMarkers : []"
@@ -509,6 +517,7 @@ seedLogEntries()
         :curvature="curvature"
         :scanlines="scanlines"
         :glow="glow"
+        :flat="flat"
       />
     </div>
 

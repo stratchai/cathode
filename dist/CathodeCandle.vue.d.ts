@@ -18,8 +18,16 @@ type __VLS_Props = {
     overlays?: PriceOverlay[];
     /** Trade entry/exit annotations at (timestamp, price) points. */
     markers?: TradeMarker[];
+    /**
+     * Force the 2D-canvas fallback path — skip Three.js + barrel shader
+     * entirely. Use for mini-charts: dashboards rendering many cards at
+     * once exceed Chrome's ~16 WebGL-context cap, evicting visible charts.
+     * The barrel effect is also barely legible at small sizes.
+     */
+    flat?: boolean;
 };
 declare const _default: import("vue").DefineComponent<__VLS_Props, {}, {}, {}, {}, import("vue").ComponentOptionsMixin, import("vue").ComponentOptionsMixin, {}, string, import("vue").PublicProps, Readonly<__VLS_Props> & Readonly<{}>, {
+    flat: boolean;
     glow: boolean;
     theme: "none" | "phosphor" | "amber" | "paper";
     curvature: number;
