@@ -98,7 +98,7 @@ export interface CandleColors {
   /** Volume bar fill (semi-transparent). */
   volumeBull:   string
   volumeBear:   string
-  /** Subtle gridline / axis colour for future use (PR 2). */
+  /** Subtle gridline / axis colour. */
   gridline:     string
   /** Default text colour. */
   text:         string
@@ -107,66 +107,83 @@ export interface CandleColors {
   /** Default trade-marker colours when not overridden by the marker itself. */
   markerEntry:  string
   markerExit:   string
+  /** Translucent backdrop for non-blocking floating panels (legend, OHLCV
+   *  readout). Light-themes use light backdrops, dark themes use dark. */
+  panelBg:      string
+  /** Near-opaque backdrop for panels that need solid readability (marker
+   *  tooltip). Same hue as panelBg, higher alpha. Also used as the marker
+   *  triangle's stroke colour to give a thin contrasting outline. */
+  panelBgSolid: string
 }
 
 export const CANDLE_THEME_COLORS: Record<string, CandleColors> = {
   none: {
     // bg fully transparent so the parent (glass CathodeContainer) shows
     // through. Same propagation pattern as CanvasGrid / CanvasLog `none`.
-    bg:          'rgba(0,0,0,0)',
-    candleBull:  '#26a69a',
-    candleBear:  '#ef5350',
-    wickBull:    '#26a69a',
-    wickBear:    '#ef5350',
-    volumeBull:  'rgba(38,166,154,0.45)',
-    volumeBear:  'rgba(239,83,80,0.45)',
-    gridline:    'rgba(255,255,255,0.06)',
-    text:        '#c0d0e0',
-    accent:      '#40a0f0',
-    markerEntry: '#00cc55',
-    markerExit:  '#e74c3c',
+    bg:           'rgba(0,0,0,0)',
+    candleBull:   '#26a69a',
+    candleBear:   '#ef5350',
+    wickBull:     '#26a69a',
+    wickBear:     '#ef5350',
+    volumeBull:   'rgba(38,166,154,0.45)',
+    volumeBear:   'rgba(239,83,80,0.45)',
+    gridline:     'rgba(255,255,255,0.06)',
+    text:         '#c0d0e0',
+    accent:       '#40a0f0',
+    markerEntry:  '#00cc55',
+    markerExit:   '#e74c3c',
+    panelBg:      'rgba(13,21,32,0.55)',
+    panelBgSolid: 'rgba(13,21,32,0.92)',
   },
   paper: {
-    bg:          'rgba(0,0,0,0)',
-    candleBull:  '#1a8038',
-    candleBear:  '#c0392b',
-    wickBull:    '#1a8038',
-    wickBear:    '#c0392b',
-    volumeBull:  'rgba(26,128,56,0.30)',
-    volumeBear:  'rgba(192,57,43,0.30)',
-    gridline:    'rgba(0,0,0,0.06)',
-    text:        '#222222',
-    accent:      '#158cba',
-    markerEntry: '#1a9e3f',
-    markerExit:  '#d93025',
+    bg:           'rgba(0,0,0,0)',
+    candleBull:   '#1a8038',
+    candleBear:   '#c0392b',
+    wickBull:     '#1a8038',
+    wickBear:     '#c0392b',
+    volumeBull:   'rgba(26,128,56,0.30)',
+    volumeBear:   'rgba(192,57,43,0.30)',
+    gridline:     'rgba(0,0,0,0.06)',
+    text:         '#222222',
+    accent:       '#158cba',
+    markerEntry:  '#1a9e3f',
+    markerExit:   '#d93025',
+    // Light backdrops for paper mode — dark fallbacks would be illegible on
+    // the white parent background.
+    panelBg:      'rgba(255,255,255,0.78)',
+    panelBgSolid: 'rgba(255,255,255,0.96)',
   },
   phosphor: {
-    bg:          '#060d06',
-    candleBull:  '#33ff33',
-    candleBear:  '#ff5050',
-    wickBull:    '#33ff33',
-    wickBear:    '#ff5050',
-    volumeBull:  'rgba(51,255,51,0.35)',
-    volumeBear:  'rgba(255,80,80,0.35)',
-    gridline:    'rgba(51,255,51,0.10)',
-    text:        '#33ff33',
-    accent:      '#80ff80',
-    markerEntry: '#80ff80',
-    markerExit:  '#ff8080',
+    bg:           '#060d06',
+    candleBull:   '#33ff33',
+    candleBear:   '#ff5050',
+    wickBull:     '#33ff33',
+    wickBear:     '#ff5050',
+    volumeBull:   'rgba(51,255,51,0.35)',
+    volumeBear:   'rgba(255,80,80,0.35)',
+    gridline:     'rgba(51,255,51,0.10)',
+    text:         '#33ff33',
+    accent:       '#80ff80',
+    markerEntry:  '#80ff80',
+    markerExit:   '#ff8080',
+    panelBg:      'rgba(6,13,6,0.85)',
+    panelBgSolid: 'rgba(6,13,6,0.96)',
   },
   amber: {
-    bg:          '#0a0700',
-    candleBull:  '#ffd060',
-    candleBear:  '#ff5000',
-    wickBull:    '#ffd060',
-    wickBear:    '#ff5000',
-    volumeBull:  'rgba(255,208,96,0.35)',
-    volumeBear:  'rgba(255,80,0,0.35)',
-    gridline:    'rgba(255,176,0,0.10)',
-    text:        '#ffb000',
-    accent:      '#ffd060',
-    markerEntry: '#ffe080',
-    markerExit:  '#ff7030',
+    bg:           '#0a0700',
+    candleBull:   '#ffd060',
+    candleBear:   '#ff5000',
+    wickBull:     '#ffd060',
+    wickBear:     '#ff5000',
+    volumeBull:   'rgba(255,208,96,0.35)',
+    volumeBear:   'rgba(255,80,0,0.35)',
+    gridline:     'rgba(255,176,0,0.10)',
+    text:         '#ffb000',
+    accent:       '#ffd060',
+    markerEntry:  '#ffe080',
+    markerExit:   '#ff7030',
+    panelBg:      'rgba(10,7,0,0.85)',
+    panelBgSolid: 'rgba(10,7,0,0.96)',
   },
 }
 
@@ -319,13 +336,17 @@ export interface DrawCandleOpts {
   markers?:       TradeMarker[]
 }
 
-/** Format a price for the right-axis label — fewer decimals at higher prices. */
+/** Format a price as a financial number — thousands separators, decimal scale
+ *  by magnitude (fewer decimals at higher prices). */
 function fmtPrice(p: number): string {
-  if (p >= 10000) return p.toFixed(0)
-  if (p >= 100)   return p.toFixed(1)
-  if (p >= 1)     return p.toFixed(2)
-  if (p >= 0.01)  return p.toFixed(4)
-  return p.toFixed(6)
+  const a = Math.abs(p)
+  const opts: Intl.NumberFormatOptions =
+    a >= 10000 ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } :
+    a >= 100   ? { minimumFractionDigits: 1, maximumFractionDigits: 1 } :
+    a >= 1     ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } :
+    a >= 0.01  ? { minimumFractionDigits: 4, maximumFractionDigits: 4 } :
+                 { minimumFractionDigits: 6, maximumFractionDigits: 6 }
+  return p.toLocaleString('en-US', opts)
 }
 
 /** Format a ms-epoch timestamp for the bottom axis. Strips date if all
@@ -636,9 +657,7 @@ function drawLegend(
   const boxY = panes.priceY0 + 4
 
   // Translucent backdrop so text reads over candles.
-  ctx.fillStyle = c.bg.startsWith('rgba(0,0,0,0)')
-    ? 'rgba(13,21,32,0.55)'
-    : 'rgba(0,0,0,0.30)'
+  ctx.fillStyle = c.panelBg
   ctx.fillRect(boxX, boxY, boxW, boxH)
 
   // Each row
@@ -726,9 +745,7 @@ function drawOhlcvReadout(
   const stripX = PADDING_LEFT + 4
 
   // Translucent backdrop
-  ctx.fillStyle = c.bg.startsWith('rgba(0,0,0,0)')
-    ? 'rgba(13,21,32,0.55)'
-    : 'rgba(0,0,0,0.30)'
+  ctx.fillStyle = c.panelBg
   ctx.fillRect(stripX, stripY, totalW, ROW_H + PAD_Y * 2)
 
   // Render segments
@@ -834,8 +851,8 @@ function drawMarkerTooltip(
   if (boxY < panes.priceY0) boxY = panes.priceY0
   if (boxY + boxH > panes.priceY1) boxY = panes.priceY1 - boxH
 
-  // Backdrop with marker-coloured border
-  ctx.fillStyle   = c.bg.startsWith('rgba(0,0,0,0)') ? 'rgba(13,21,32,0.92)' : 'rgba(0,0,0,0.78)'
+  // Backdrop with marker-coloured border (solid backdrop for readability)
+  ctx.fillStyle   = c.panelBgSolid
   ctx.strokeStyle = hit.m.kind === 'entry' ? c.markerEntry : c.markerExit
   ctx.lineWidth   = 1
   ctx.fillRect(boxX, boxY, boxW, boxH)
@@ -945,9 +962,12 @@ function drawMarkers(
     if (y < panes.priceY0 || y > panes.priceY1) continue   // off-pane
 
     const color = m.color ?? (m.kind === 'entry' ? c.markerEntry : c.markerExit)
-    ctx.fillStyle = color
-    ctx.strokeStyle = c.bg.startsWith('rgba(0,0,0,0)') ? '#0d1520' : c.bg
-    ctx.lineWidth = 1.5
+    ctx.fillStyle   = color
+    // Outline contrasts with the chart-area background — light in paper
+    // mode, dark in night themes — so the triangle stays clean against
+    // candles regardless of the theme. 1px keeps the shape visually light.
+    ctx.strokeStyle = c.panelBgSolid
+    ctx.lineWidth   = 1
 
     // Entry: ▲ pointing UP, anchored slightly BELOW the price (so the apex sits at price).
     // Exit:  ▼ pointing DOWN, anchored slightly ABOVE the price.

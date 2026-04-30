@@ -78,7 +78,7 @@ export interface CandleColors {
     /** Volume bar fill (semi-transparent). */
     volumeBull: string;
     volumeBear: string;
-    /** Subtle gridline / axis colour for future use (PR 2). */
+    /** Subtle gridline / axis colour. */
     gridline: string;
     /** Default text colour. */
     text: string;
@@ -87,6 +87,13 @@ export interface CandleColors {
     /** Default trade-marker colours when not overridden by the marker itself. */
     markerEntry: string;
     markerExit: string;
+    /** Translucent backdrop for non-blocking floating panels (legend, OHLCV
+     *  readout). Light-themes use light backdrops, dark themes use dark. */
+    panelBg: string;
+    /** Near-opaque backdrop for panels that need solid readability (marker
+     *  tooltip). Same hue as panelBg, higher alpha. Also used as the marker
+     *  triangle's stroke colour to give a thin contrasting outline. */
+    panelBgSolid: string;
 }
 export declare const CANDLE_THEME_COLORS: Record<string, CandleColors>;
 /** Default split — top portion is price, bottom is volume. 0..1. */

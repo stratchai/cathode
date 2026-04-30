@@ -385,6 +385,43 @@ test.describe('CathodeCandle', () => {
     expect(watch.entries).toEqual([]);
   });
 
+  test('paper theme produces visibly different output than dark theme (no blank, no errors)', async ({ page }) => {
+    const watch = collectConsoleErrors(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: /^Candle$/ }).click();
+    const canvas = page.locator('.tab-content:visible canvas').first();
+    await canvas.waitFor({ state: 'visible' });
+    await page.waitForTimeout(400);
+
+    // Make sure overlays + markers are on so legend / tooltip backdrops render
+    const indicatorsToggle = page.getByTestId('cf-show-indicators');
+    if (!(await indicatorsToggle.isChecked())) await indicatorsToggle.check();
+    await page.waitForTimeout(150);
+
+    // Hover so the OHLCV strip + crosshair pill + price-axis label render
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('canvas not found');
+    await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.4);
+    await page.waitForTimeout(150);
+
+    const darkBytes = (await canvas.screenshot()).length;
+    expect(darkBytes, 'dark-theme candle canvas blank').toBeGreaterThan(BLANK_FLOOR);
+
+    // Switch to paper theme
+    await page.locator('select').filter({ hasText: 'Paper' }).first().selectOption('paper');
+    await page.waitForTimeout(250);
+    await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.4);
+    await page.waitForTimeout(150);
+
+    const paperBytes = (await canvas.screenshot()).length;
+    expect(paperBytes, 'paper-theme candle canvas blank').toBeGreaterThan(BLANK_FLOOR);
+    expect(paperBytes,
+      `paper theme produced same screenshot bytes as dark (${darkBytes} → ${paperBytes}) — colors did not change`,
+    ).not.toBe(darkBytes);
+
+    expect(watch.entries).toEqual([]);
+  });
+
   test('crosshair + axis labels render under hover', async ({ page }) => {
     const watch = collectConsoleErrors(page);
     await page.goto('/');
