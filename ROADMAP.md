@@ -75,30 +75,45 @@ the title bar + drag handles, NOT a separate component.
 
 ---
 
-## Phase 3 — CurvedKLine
+## Phase 3 — CathodeKLine  ← in progress
 
 A native canvas OHLCV candlestick chart with the full WebGL shader pipeline
-(barrel distortion, scanlines, glow) — the same architecture as CathodeGrid.
+(barrel distortion, scanlines, glow) — the same architecture as CathodeGrid
+and CathodeLog. Component renamed from "CurvedKLine" → "CathodeKLine" for
+naming consistency.
 
 > **Why native canvas and not a chart library wrapper?**
 > Existing libraries (lightweight-charts, klinechart) render to their own
 > canvas or SVG. Applying the barrel shader requires owning the canvas.
 > Wrapping introduces a layout boundary that makes shader sizing unreliable.
 
+### PR 1 — foundation  ✓ (2026-04-30)
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | `OHLCVCandle` type + `KLineColors` palette + `KLINE_THEME_COLORS` for none/paper/phosphor/amber | ✓ done |
+| 2 | `drawKLine` pure renderer — candles + wicks + volume bars | ✓ done |
+| 3 | `CathodeKLine.vue` Vue wrapper — Three.js + barrel-shader pipeline (mirrors CathodeLog) | ✓ done |
+| 4 | Demo KLine tab + 300-bar synthetic OHLCV generator | ✓ done |
+| 5 | Playwright suite: render smoke + viewport sweep + curvature drag | ✓ done (3 tests) |
+| 6 | Index exports for component + types | ✓ done |
+
+### PR 2 — interactions + integration  ← next
+
 | # | Item | Notes |
 |---|------|-------|
-| 1 | OHLCV data type + props interface | `candles: OHLCV[]`, `interval`, `theme` |
-| 2 | Canvas renderer — candles, wicks, volume bars, crosshair | Port draw logic from existing ChartPanel patterns |
-| 3 | WebGL shader pass (reuse CathodeGrid barrel/scanline/glow uniforms) | Shared shader module |
-| 4 | Zoom + pan (mouse wheel + drag) | |
-| 5 | Price axis + time axis labels | |
-| 6 | `dashboard/ChartPanel` integration test | Replace existing chart |
+| 1 | Mouse wheel zoom (slot width interpolation) | |
+| 2 | Click-drag pan (horizontal scroll through candles) | |
+| 3 | Crosshair + price/time readout on hover | |
+| 4 | Price axis (right edge) — labels at major price levels | |
+| 5 | Time axis (bottom edge) — auto-scaled to interval | |
+| 6 | `dashboard/ChartPanel` integration — replace klinecharts | Validate: trade markers, focused-product switching, candle stream updates |
 
 ### Phase 3 → done when
-- `CurvedKLine` exported from cathode index
-- ChartPanel in dashboard uses it
+- CathodeKLine exported from cathode index
+- ChartPanel in dashboard uses it (klinecharts dep removed)
 - Zoom, pan, crosshair all working
-- WebGL fallback (2D blit) works as it does for CathodeGrid
+- WebGL fallback (2D blit) works as it does for CathodeGrid / CathodeLog
 
 ---
 

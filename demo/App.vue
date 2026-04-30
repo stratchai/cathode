@@ -2,15 +2,17 @@
 import { ref, computed, watch } from 'vue'
 import CathodeGrid      from '../src/CathodeGrid.vue'
 import CathodeLog       from '../src/CathodeLog.vue'
+import CathodeKLine     from '../src/CathodeKLine.vue'
 import CathodeWorkspace from '../src/CathodeWorkspace.vue'
 import CathodeContainer from '../src/CathodeContainer.vue'
 import { buildDefaultLayout } from '../src/useCathodeLayout'
 import type { ColDef, GridApi } from '../src/types'
 import type { ContainerState } from '../src/useCathodeLayout'
 import type { LogEntry } from '../src/CanvasLog'
+import type { OHLCVCandle } from '../src/CanvasKLine'
 
 // ── Shared state ──────────────────────────────────────────────────────────────
-type DemoTab = 'grid' | 'workspace' | 'log'
+type DemoTab = 'grid' | 'workspace' | 'log' | 'kline'
 const activeTab = ref<DemoTab>('workspace')
 
 type Theme = 'none' | 'phosphor' | 'amber' | 'paper'
@@ -237,6 +239,27 @@ const LOG_TEMPLATES: Array<{ level: LogEntry['level']; text: string }> = [
 ]
 
 const logEntries = ref<LogEntry[]>([])
+
+// ── KLine tab — sample OHLCV candles ──────────────────────────────────────────
+// Synthetic random walk with gentle drift; large enough to test horizontal scroll.
+function generateOHLCV(n: number): OHLCVCandle[] {
+  const out: OHLCVCandle[] = []
+  let price = 60000
+  const t0 = Date.now() - n * 3_600_000   // hourly bars
+  for (let i = 0; i < n; i++) {
+    const drift = (Math.random() - 0.495) * price * 0.012
+    const open  = price
+    const close = Math.max(1, price + drift)
+    const high  = Math.max(open, close) * (1 + Math.random() * 0.005)
+    const low   = Math.min(open, close) * (1 - Math.random() * 0.005)
+    const vol   = Math.round(20 + Math.random() * 80)
+    out.push({ start: t0 + i * 3_600_000, open, close, high, low, volume: vol })
+    price = close
+  }
+  return out
+}
+
+const klineCandles = ref<OHLCVCandle[]>(generateOHLCV(300))
 function seedLogEntries() {
   const out: LogEntry[] = []
   const base = Date.now() - 1000 * 60 * 30
@@ -266,6 +289,9 @@ seedLogEntries()
         </button>
         <button :class="['tab-btn', { active: activeTab === 'log' }]" @click="activeTab = 'log'">
           Log
+        </button>
+        <button :class="['tab-btn', { active: activeTab === 'kline' }]" @click="activeTab = 'kline'">
+          KLine
         </button>
       </div>
 
@@ -318,6 +344,17 @@ seedLogEntries()
     <div v-show="activeTab === 'log'" class="tab-content">
       <CathodeLog
         :entries="logEntries"
+        :theme="theme"
+        :curvature="curvature"
+        :scanlines="scanlines"
+        :glow="glow"
+      />
+    </div>
+
+    <!-- ── KLine tab — OHLCV candlestick chart with the barrel pipeline ─── -->
+    <div v-show="activeTab === 'kline'" class="tab-content">
+      <CathodeKLine
+        :candles="klineCandles"
         :theme="theme"
         :curvature="curvature"
         :scanlines="scanlines"
