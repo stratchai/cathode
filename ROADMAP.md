@@ -33,6 +33,18 @@ Find the current phase. Work the **top unresolved item**. One at a time.
 
 ---
 
+## Phase 1.5 — CathodeLog + interaction test suite  ✓ (completed 2026-04-29)
+
+Off-roadmap additions discovered while integrating with dashboard.
+
+| # | Item | Notes |
+|---|------|-------|
+| 1 | `CathodeLog` component — canvas-rendered scrolling log/terminal | Same Three.js + barrel-shader pipeline as CathodeGrid. Entry shape `{ ts?, text, level? }` with level-based coloring (info/warn/error/debug/success), word wrap, stick-to-bottom autoscroll, ring-buffer cap. Read-only PR (1 of 2); optional command-prompt input deferred to PR 2. |
+| 2 | Drag-rate Playwright suite (9 tests) | `grid-resize.spec.ts`, `log-resize.spec.ts`, `grid-interaction.spec.ts`, `workspace-interaction.spec.ts`. Mouse-driven at 60Hz with `webglcontextlost` instrumentation + canvas-screenshot byte-floor checks. |
+| 3 | CathodeContainer curvature-drag context-loss fix | Removed `watch(() => props.curvature, () => resizeKey++)` — at slider-drag rate it was forcing slot children to remount, churning WebGL contexts, and the browser was evicting the visible Log's context. |
+
+---
+
 ## Phase 2 — CurvedFrame  ← next
 
 A generic slot-based container that gives any child content the CRT aesthetic:
@@ -91,15 +103,20 @@ A native canvas OHLCV candlestick chart with the full WebGL shader pipeline
 
 ## Phase 4 — Test Suite + Publish Prep
 
-| # | Item | Notes |
-|---|------|-------|
-| 1 | Unit tests — barrel math, hit-test geometry, `sizeToContainer` | Vitest, no DOM required for pure math |
-| 2 | Component tests — `CathodeGrid`, `CurvedFrame`, `CurvedKLine` render smoke tests | Vitest + `@vue/test-utils` |
-| 3 | GitHub Actions CI | Run tests on every push to main |
-| 4 | Semver tagging — v1.0.0 | Requires Phase 1–3 complete and test suite green |
-| 5 | `package.json` publish prep — `files`, `exports`, `peerDeps` | Vue 3 as peer dep |
-| 6 | README — component API docs, screenshots, install instructions | |
-| 7 | `npm publish` to public registry | |
+Phase 1.5's Playwright suite (drag-rate interaction tests) substantially
+covers item #2. Pure-math unit tests (item #1) are still pending — they
+catch regressions in barrel math and hit-test geometry without needing
+a browser.
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | Unit tests — barrel math, hit-test geometry, `sizeToContainer` | pending (Vitest, no DOM) |
+| 2 | Component / integration tests — render smoke + drag-rate regression | ✓ partial (Phase 1.5 Playwright suite covers grid + log + container drag) |
+| 3 | GitHub Actions CI — run tests on every push to main | pending |
+| 4 | Semver tagging — v1.0.0 | Requires Phase 2–3 complete |
+| 5 | `package.json` publish prep — `files`, `exports`, `peerDeps` | pending |
+| 6 | README — component API docs, screenshots, install instructions | pending |
+| 7 | `npm publish` to public registry | pending |
 
 ### Phase 4 → done when
 - `npm install @stratchai/cathode` works from a fresh project
