@@ -45,32 +45,33 @@ Off-roadmap additions discovered while integrating with dashboard.
 
 ---
 
-## Phase 2 — CurvedFrame  ← next
+## Phase 2 — CurvedFrame  ✗ dropped (2026-04-30)
 
-A generic slot-based container that gives any child content the CRT aesthetic:
-bezel, scanline overlay, vignette, and optional glow. Works with live HTML
-(no WebGL required for the container itself — CSS-based effects only).
+Originally planned as a CSS-based slot container with bezel + scanlines
++ vignette + curvature for arbitrary HTML. Built and reviewed; dropped
+on the same day for two reasons:
 
-> **Why CSS and not the WebGL shader?**
-> Barrel-distorting live HTML requires render-to-texture, which kills
-> interactivity. The WebGL shader pipeline is reserved for fully-canvas
-> controls (CathodeGrid, CurvedKLine) where we own every pixel.
-> CurvedFrame achieves the visual language through CSS `perspective`,
-> a scanline pseudo-element overlay, and a vignette gradient.
+  1. **CSS cannot truly curve live HTML.** `rotateX` / `perspective`
+     foreshorten a flat plane (top edge tilts back) but do not bend
+     it — the visual effect on real content read as "shrink", not
+     "bulge". True barrel distortion requires render-to-texture,
+     which kills interactivity. The roadmap already noted this
+     ("Not true barrel, but convincing at low values"); the actual
+     output was less convincing than predicted.
+  2. **The aesthetic was already in CathodeContainer.** Inspection
+     revealed the existing CathodeContainer.vue scoped CSS already
+     applies scanlines (`.cc::after`), curvature-driven vignette
+     (`.cc::before`), glass shine, and bezel border-radius scaling
+     in production — making CurvedFrame a near-pure duplicate.
 
-| # | Item | Notes |
-|---|------|-------|
-| 1 | `CurvedFrame` component — bezel + scanline + vignette CSS shell | Props: `scanlines`, `glow`, `theme` |
-| 2 | Curvature approximation via CSS `perspective` + slight `rotateX` | Not true barrel, but convincing at low values |
-| 3 | Keyboard shortcut pass-through (Cmd+=/- curvature) | Same UX as CathodeGrid |
-| 4 | Right-click context menu (scanlines / glow toggles) | Consistent with CathodeGrid |
-| 5 | `dashboard/FleetPanel` integration test | Ship this before merging |
+The "non-window CRT shell" use case that motivated the component
+doesn't exist in the dashboard — every panel is already wrapped in
+a CathodeContainer. Component, demo tab, and tests removed in the
+same commit; index export unwired.
 
-### Phase 2 → done when
-- `CurvedFrame` exported from cathode index
-- FleetPanel in dashboard uses it and looks correct
-- No interactivity regressions inside the frame
-- TypeScript props fully typed
+If a future need for a chrome-less CRT shell appears, the path
+forward is a `<CathodeContainer chromeless>` prop that suppresses
+the title bar + drag handles, NOT a separate component.
 
 ---
 

@@ -1,6 +1,5 @@
 export { default as CathodeGrid } from './CathodeGrid.vue';
 export { default as CathodeLog } from './CathodeLog.vue';
-export { default as CurvedFrame } from './CurvedFrame.vue';
 export { default as CathodeWorkspace } from './CathodeWorkspace.vue';
 export { default as CathodeContainer } from './CathodeContainer.vue';
 export { useCathodeLayout, buildDefaultLayout } from './useCathodeLayout';

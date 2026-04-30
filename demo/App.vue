@@ -2,7 +2,6 @@
 import { ref, computed, watch } from 'vue'
 import CathodeGrid      from '../src/CathodeGrid.vue'
 import CathodeLog       from '../src/CathodeLog.vue'
-import CurvedFrame      from '../src/CurvedFrame.vue'
 import CathodeWorkspace from '../src/CathodeWorkspace.vue'
 import CathodeContainer from '../src/CathodeContainer.vue'
 import { buildDefaultLayout } from '../src/useCathodeLayout'
@@ -11,7 +10,7 @@ import type { ContainerState } from '../src/useCathodeLayout'
 import type { LogEntry } from '../src/CanvasLog'
 
 // ── Shared state ──────────────────────────────────────────────────────────────
-type DemoTab = 'grid' | 'workspace' | 'log' | 'frame'
+type DemoTab = 'grid' | 'workspace' | 'log'
 const activeTab = ref<DemoTab>('workspace')
 
 type Theme = 'none' | 'phosphor' | 'amber' | 'paper'
@@ -238,7 +237,6 @@ const LOG_TEMPLATES: Array<{ level: LogEntry['level']; text: string }> = [
 ]
 
 const logEntries = ref<LogEntry[]>([])
-const frameClicks = ref(0)
 function seedLogEntries() {
   const out: LogEntry[] = []
   const base = Date.now() - 1000 * 60 * 30
@@ -268,9 +266,6 @@ seedLogEntries()
         </button>
         <button :class="['tab-btn', { active: activeTab === 'log' }]" @click="activeTab = 'log'">
           Log
-        </button>
-        <button :class="['tab-btn', { active: activeTab === 'frame' }]" @click="activeTab = 'frame'">
-          Frame
         </button>
       </div>
 
@@ -328,43 +323,6 @@ seedLogEntries()
         :scanlines="scanlines"
         :glow="glow"
       />
-    </div>
-
-    <!-- ── Frame tab — exercises CurvedFrame around live HTML ────── -->
-    <div v-show="activeTab === 'frame'" class="tab-content">
-      <CurvedFrame
-        :theme="theme"
-        :curvature="curvature"
-        :scanlines="scanlines"
-        :glow="glow"
-      >
-        <!-- Live HTML content — interactive elements should keep working -->
-        <div class="frame-demo-body" data-testid="frame-demo-body">
-          <h2>CurvedFrame</h2>
-          <p>
-            CSS-only CRT shell. Drop arbitrary HTML inside; clicks, scroll, and
-            keyboard input pass through to the slot. The bezel, scanlines, and
-            vignette are pseudo-element overlays with <code>pointer-events: none</code>.
-          </p>
-          <div class="frame-demo-row">
-            <button @click="frameClicks++" class="frame-demo-btn">
-              Clicked {{ frameClicks }}× (interactivity test)
-            </button>
-            <input class="frame-demo-input" placeholder="Type here…" />
-          </div>
-          <div class="frame-demo-list">
-            <div v-for="(t, i) in trades.slice(0, 12)" :key="t.entry_timestamp + t.product"
-                 class="frame-demo-row-item">
-              <span class="frame-demo-i">#{{ i + 1 }}</span>
-              <span class="frame-demo-sym">{{ t.product }}</span>
-              <span class="frame-demo-strat">{{ t.strategy.replace(/_daily$/, '') }}</span>
-              <span :class="['frame-demo-pnl', Number(t.pnl_pct) >= 0 ? 'up' : 'dn']">
-                {{ Number(t.pnl_pct) >= 0 ? '+' : '' }}{{ Number(t.pnl_pct).toFixed(2) }}%
-              </span>
-            </div>
-          </div>
-        </div>
-      </CurvedFrame>
     </div>
 
     <!-- ── Workspace tab ─────────────────────────────────────────── -->
@@ -712,61 +670,6 @@ select, input[type="range"] {
 .ev-sym    { font-weight: bold; color: var(--cc-tx1); min-width: 36px; }
 .ev-strat  { color: var(--cc-tx3); font-size: 9px; flex: 1; }
 .ev-pnl    { font-weight: bold; }
-
-/* ── Frame tab demo body ────────────────────────────────────────── */
-.frame-demo-body {
-  padding: 28px 36px;
-  height: 100%;
-  overflow: auto;
-  position: relative;
-  z-index: 5;   /* above CurvedFrame's vignette/scanline overlays */
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-.frame-demo-body h2 {
-  margin: 0 0 8px; font-size: 18px; letter-spacing: 0.04em;
-  color: var(--cf-accent, var(--cc-accent-text));
-}
-.frame-demo-body p { margin: 0 0 18px; line-height: 1.5; opacity: 0.85; max-width: 680px; }
-.frame-demo-body code {
-  background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px;
-}
-.cathode-light .frame-demo-body code { background: rgba(0,0,0,0.05); }
-.frame-demo-row { display: flex; gap: 10px; margin-bottom: 18px; align-items: center; }
-.frame-demo-btn {
-  font-family: inherit; font-size: 12px;
-  padding: 5px 14px; border-radius: 4px;
-  background: rgba(255,255,255,0.08); color: inherit;
-  border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
-}
-.frame-demo-btn:hover { background: rgba(255,255,255,0.14); }
-.cathode-light .frame-demo-btn {
-  background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.18);
-}
-.frame-demo-input {
-  font-family: inherit; font-size: 12px;
-  padding: 5px 10px; border-radius: 4px; outline: none;
-  background: rgba(255,255,255,0.06); color: inherit;
-  border: 1px solid rgba(255,255,255,0.15);
-}
-.cathode-light .frame-demo-input {
-  background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.18);
-}
-.frame-demo-list {
-  display: flex; flex-direction: column; gap: 4px;
-  font-size: 12px;
-}
-.frame-demo-row-item {
-  display: grid;
-  grid-template-columns: 30px 110px 1fr 80px;
-  gap: 12px;
-  padding: 4px 6px;
-  border-bottom: 1px dashed rgba(255,255,255,0.08);
-}
-.cathode-light .frame-demo-row-item { border-bottom-color: rgba(0,0,0,0.08); }
-.frame-demo-i     { color: var(--cf-accent, var(--cc-accent-text)); font-weight: bold; }
-.frame-demo-sym   { font-weight: bold; }
-.frame-demo-strat { opacity: 0.65; }
-.frame-demo-pnl   { text-align: right; font-weight: bold; }
 
 /* scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
