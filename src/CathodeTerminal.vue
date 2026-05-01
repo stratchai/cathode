@@ -15,7 +15,7 @@
  * `submit` fires with the entered string. The consumer is responsible for
  * pushing the user line + response back into `entries` (or not).
  */
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import CathodeLog from './CathodeLog.vue'
 import { type LogEntry } from './CanvasLog'
 import './cathode.css'
@@ -142,12 +142,14 @@ function stopBlink() {
 // ── Phantom entry — the prompt + draft + cursor as the last "log entry" ─────
 
 const promptEntry = computed<LogEntry>(() => {
+  // Full block (U+2588) — same width as a monospace character cell, so the
+  // cursor looks the right size at any zoom. Earlier U+25AE rendered narrow.
   // Steady block while busy (no blink) so the spinner-like state is obvious;
   // empty space while disabled (no editable input).
   let cursor: string
   if (props.disabled)      cursor = ' '
-  else if (props.busy)     cursor = '▮'
-  else                     cursor = cursorVisible.value ? '▮' : ' '
+  else if (props.busy)     cursor = '█'
+  else                     cursor = cursorVisible.value ? '█' : ' '
   return { level: 'info', text: `${props.prompt}${draft.value}${cursor}` }
 })
 
@@ -161,6 +163,16 @@ function onWrapClick() {
   if (props.disabled) return
   inputEl.value?.focus()
 }
+
+// Restore focus when `busy` falls back to false. Toggling the input's
+// `disabled` attribute (when busy goes true) kicks focus off the element;
+// without this watcher the user has to click again to keep typing — not
+// how a real terminal works (Enter alone, repeatedly, should keep going).
+watch(() => props.busy, (busy, prev) => {
+  if (prev && !busy && !props.disabled) {
+    nextTick(() => inputEl.value?.focus())
+  }
+})
 
 // ── Public API ──────────────────────────────────────────────────────────────
 

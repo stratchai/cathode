@@ -72,7 +72,10 @@ export const LOG_THEME_COLORS: Record<string, LogColors> = {
     text:         '#222222',
     border:       '#dee2e6',
     accent:       '#158cba',
-    rowAlt:       'rgba(21,140,186,0.04)',
+    // Black at 2% — invisible on dark bg, barely-there shading on light.
+    // The previous accent-blue at 4% read as harsh bands across each
+    // entry on a paper-light surface (visible above ~3% alpha on white).
+    rowAlt:       'rgba(0,0,0,0.020)',
     levelInfo:    '#444444',
     levelWarn:    '#a06000',
     levelError:   '#c0392b',
