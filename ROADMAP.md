@@ -45,6 +45,36 @@ Off-roadmap additions discovered while integrating with dashboard.
 
 ---
 
+## Phase 1.6 — CathodeTerminal  ✓ (completed 2026-05-01)
+
+The "optional command-prompt input deferred to PR 2" item from Phase 1.5
+landed as a separate component rather than as a `CathodeLog` enhancement
+— composition over expansion. `CathodeTerminal` instances a `CathodeLog`
+for the scrollback and stacks a command-prompt input row underneath, so
+the log component stays unchanged.
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | `CathodeTerminal.vue` — composes `<CathodeLog>` for scrollback, adds an input row pinned to the bottom. Theme-aware (none/phosphor/amber/paper); palette borrowed from `LOG_THEME_COLORS`. | ✓ done |
+| 2 | History navigation — ↑/↓ cycle through prior submitted commands; ↓ past the most recent restores the in-progress draft. Internal ring buffer, `historyLimit` prop (default 100). | ✓ done |
+| 3 | Public API — `submit` event with the entered string (consumer owns echo + response routing); `busy` prop dims the input + shows a blinking caret while a backend call is in flight; `defineExpose({ focus })`. | ✓ done |
+| 4 | Demo Terminal tab + tiny echo handler (help / echo / time / fail / clear) so the round-trip works without a backend. | ✓ done |
+| 5 | Playwright suite — render smoke, submit-roundtrip, history navigation. 3 new tests, 27 total. | ✓ done |
+| 6 | Index exports for component (no extra types — reuses `LogEntry`). | ✓ done |
+
+> **Why a sibling, not a CathodeLog flag?** `CathodeLog` is read-only by
+> contract — it has no DOM children, just a canvas. Adding an input row
+> would have meant a non-canvas child + flex layout + a focus model
+> alien to a "passive viewer". A separate component keeps each one
+> single-purpose; consumers that don't need the prompt aren't forced
+> to opt out of it.
+
+The next-step "wire to a real backend" work (Claude chat, sk-* command
+execution) is deliberately scoped to consumer repos — this component
+stays UI-only.
+
+---
+
 ## Phase 2 — CurvedFrame  ✗ dropped (2026-04-30)
 
 Originally planned as a CSS-based slot container with bezel + scanlines

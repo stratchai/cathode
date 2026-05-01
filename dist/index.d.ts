@@ -1,5 +1,6 @@
 export { default as CathodeGrid } from './CathodeGrid.vue';
 export { default as CathodeLog } from './CathodeLog.vue';
+export { default as CathodeTerminal } from './CathodeTerminal.vue';
 export { default as CathodeCandle } from './CathodeCandle.vue';
 export { default as CathodeWorkspace } from './CathodeWorkspace.vue';
 export { default as CathodeContainer } from './CathodeContainer.vue';

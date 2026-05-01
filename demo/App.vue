@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import CathodeGrid      from '../src/CathodeGrid.vue'
 import CathodeLog       from '../src/CathodeLog.vue'
 import CathodeCandle     from '../src/CathodeCandle.vue'
+import CathodeTerminal   from '../src/CathodeTerminal.vue'
 import CathodeWorkspace from '../src/CathodeWorkspace.vue'
 import CathodeContainer from '../src/CathodeContainer.vue'
 import { buildDefaultLayout } from '../src/useCathodeLayout'
@@ -12,7 +13,7 @@ import type { LogEntry } from '../src/CanvasLog'
 import type { OHLCVCandle, PriceOverlay, TradeMarker } from '../src/CanvasCandle'
 
 // ── Shared state ──────────────────────────────────────────────────────────────
-type DemoTab = 'grid' | 'workspace' | 'log' | 'candle'
+type DemoTab = 'grid' | 'workspace' | 'log' | 'candle' | 'terminal'
 const activeTab = ref<DemoTab>('workspace')
 
 type Theme = 'none' | 'phosphor' | 'amber' | 'paper'
@@ -249,6 +250,50 @@ const LOG_TEMPLATES: Array<{ level: LogEntry['level']; text: string }> = [
 
 const logEntries = ref<LogEntry[]>([])
 
+// ── Terminal tab — echo handler so the demo has a working roundtrip without
+//    needing any real backend. Consumers wire `submit` to a real handler. ────
+const terminalEntries = ref<LogEntry[]>([
+  { level: 'info', text: "CathodeTerminal demo. Try 'help', 'echo hi', 'time', or 'fail'." },
+])
+const terminalBusy = ref(false)
+
+function onTerminalSubmit(cmd: string) {
+  // Echo the user's command into the scrollback first
+  terminalEntries.value = [
+    ...terminalEntries.value,
+    { level: 'info', text: `→ ${cmd}` },
+  ]
+
+  // Tiny built-in vocabulary — purely demo. Real consumers route to a backend.
+  const trimmed = cmd.trim()
+  let level: LogEntry['level'] = 'success'
+  let response: string
+
+  if (trimmed === 'help') {
+    response = "commands: help · echo <text> · time · fail · clear"
+  } else if (trimmed === 'time') {
+    response = new Date().toISOString()
+  } else if (trimmed === 'fail') {
+    level    = 'error'
+    response = 'simulated failure: nothing actually went wrong'
+  } else if (trimmed === 'clear') {
+    terminalEntries.value = []
+    return
+  } else if (trimmed.startsWith('echo ')) {
+    response = trimmed.slice(5)
+  } else {
+    level    = 'warn'
+    response = `unknown command: ${trimmed} — type 'help' for the demo vocabulary`
+  }
+
+  // Simulate a short async backend round-trip so the busy spinner shows up
+  terminalBusy.value = true
+  setTimeout(() => {
+    terminalEntries.value = [...terminalEntries.value, { level, text: response }]
+    terminalBusy.value    = false
+  }, 180)
+}
+
 // ── Candle tab — sample OHLCV candles ──────────────────────────────────────────
 // Synthetic random walk with gentle drift; large enough to test horizontal scroll.
 function generateOHLCV(n: number): OHLCVCandle[] {
@@ -443,6 +488,9 @@ seedLogEntries()
         <button :class="['tab-btn', { active: activeTab === 'candle' }]" @click="activeTab = 'candle'">
           Candle
         </button>
+        <button :class="['tab-btn', { active: activeTab === 'terminal' }]" @click="activeTab = 'terminal'">
+          Terminal
+        </button>
       </div>
 
       <!-- Theme -->
@@ -526,6 +574,21 @@ seedLogEntries()
         :glow="glow"
         :flat="flat"
         :compact="compact"
+      />
+    </div>
+
+    <!-- ── Terminal tab — log scrollback + command-prompt input row ─── -->
+    <div v-show="activeTab === 'terminal'" class="tab-content">
+      <CathodeTerminal
+        :entries="terminalEntries"
+        :theme="theme"
+        :curvature="curvature"
+        :scanlines="scanlines"
+        :glow="glow"
+        :busy="terminalBusy"
+        prompt="→ "
+        placeholder="type a command (try: help, echo …, time)"
+        @submit="onTerminalSubmit"
       />
     </div>
 
