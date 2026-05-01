@@ -78,6 +78,11 @@ const scrollY       = ref(0)   // vertical offset (px)
 const scrollX       = ref(0)   // horizontal offset (px)
 const hoveredRow    = ref(-1)
 const selectedCell  = ref<{ row: number, col: number } | null>(null)
+// Anchor for Excel-style range selection. Shift-arrow / shift-click moves
+// `selectedCell` (the active cursor) while leaving the anchor in place;
+// the rectangle between them is the selection. Plain arrow/click
+// collapses the selection by writing both anchor and active to the same cell.
+const selectionAnchor = ref<{ row: number, col: number } | null>(null)
 const activeFilter  = ref<string | null>(null)
 
 // Filter popup
@@ -516,6 +521,8 @@ function redraw() {
       hoveredRow:  hoveredRow.value,
       selectedRow: selectedCell.value?.row ?? -1,
       selectedCol: selectedCell.value?.col ?? -1,
+      selectionAnchorRow: selectionAnchor.value?.row ?? -1,
+      selectionAnchorCol: selectionAnchor.value?.col ?? -1,
       formatCell,
       getCellStyle,
     })
@@ -549,6 +556,8 @@ function redraw() {
     hoveredRow:  hoveredRow.value,
     selectedRow: selectedCell.value?.row ?? -1,
     selectedCol: selectedCell.value?.col ?? -1,
+    selectionAnchorRow: selectionAnchor.value?.row ?? -1,
+    selectionAnchorCol: selectionAnchor.value?.col ?? -1,
     formatCell,
     getCellStyle,
   })
@@ -706,7 +715,15 @@ function onCanvasClick(e: MouseEvent) {
   // ── Body click — select cell ───────────────────────────────────────────────
   if (hit.area === 'body' && hit.rowIdx >= 0 && hit.colIdx >= 0) {
     const absRow = hit.rowIdx
-    selectedCell.value = { row: absRow, col: hit.colIdx }
+    // Shift-click extends the selection: keep the existing anchor (or the
+    // current cell if there isn't one yet) and move the active cell only.
+    if (e.shiftKey && selectedCell.value) {
+      if (!selectionAnchor.value) selectionAnchor.value = { ...selectedCell.value }
+      selectedCell.value = { row: absRow, col: hit.colIdx }
+    } else {
+      selectedCell.value    = { row: absRow, col: hit.colIdx }
+      selectionAnchor.value = { row: absRow, col: hit.colIdx }
+    }
     canvasEl.value?.focus()
 
     const row = filteredRows.value[absRow]
@@ -748,37 +765,54 @@ function onKeyDown(e: KeyboardEvent) {
   if (!selectedCell.value) {
     if (['ArrowDown','ArrowUp','ArrowLeft','ArrowRight','Tab','Enter'].includes(e.key)) {
       e.preventDefault()
-      selectedCell.value = { row: firstVisibleRow.value, col: 0 }
+      selectedCell.value    = { row: firstVisibleRow.value, col: 0 }
+      selectionAnchor.value = { row: firstVisibleRow.value, col: 0 }
     }
     return
   }
 
   let { row, col } = selectedCell.value   // row is absolute
 
-  const goTo = (r: number, c: number) => {
+  // `extend` = shift-held; we move only the active cell and leave the
+  // anchor where it is, so the selection rectangle grows. Plain moves
+  // collapse the selection by writing the anchor to the new active cell.
+  const goTo = (r: number, c: number, extend = false) => {
     row = Math.max(0, Math.min(maxRow, r))
     col = Math.max(0, Math.min(maxCol, c))
     selectedCell.value = { row, col }
+    if (!extend) selectionAnchor.value = { row, col }
     ensureRowVisible(row)
     ensureColVisible(col)
   }
 
   switch (e.key) {
-    case 'ArrowDown':  e.preventDefault(); goTo(row + 1, col); break
-    case 'ArrowUp':    e.preventDefault(); goTo(row - 1, col); break
+    case 'ArrowDown':  e.preventDefault(); goTo(row + 1, col, e.shiftKey); break
+    case 'ArrowUp':    e.preventDefault(); goTo(row - 1, col, e.shiftKey); break
 
     case 'ArrowRight':
       e.preventDefault()
-      col < maxCol ? goTo(row, col + 1) : goTo(row + 1, 0)
+      if (e.shiftKey) {
+        // Shift-arrow stays on the same row even at the right edge — Excel
+        // doesn't wrap selection. Plain arrow keeps the existing wrap behaviour.
+        goTo(row, col + 1, true)
+      } else {
+        col < maxCol ? goTo(row, col + 1) : goTo(row + 1, 0)
+      }
       break
 
     case 'ArrowLeft':
       e.preventDefault()
-      col > 0 ? goTo(row, col - 1) : goTo(row - 1, maxCol)
+      if (e.shiftKey) {
+        goTo(row, col - 1, true)
+      } else {
+        col > 0 ? goTo(row, col - 1) : goTo(row - 1, maxCol)
+      }
       break
 
     case 'Tab':
       e.preventDefault()
+      // Tab always collapses selection (single-cell editing rhythm) and
+      // wraps at row edges. Shift+Tab is reverse-tab, not range extend.
       if (!e.shiftKey) { col < maxCol ? goTo(row, col + 1) : goTo(row + 1, 0) }
       else             { col > 0      ? goTo(row, col - 1) : goTo(row - 1, maxCol) }
       break
@@ -790,38 +824,69 @@ function onKeyDown(e: KeyboardEvent) {
 
     case 'Home':
       e.preventDefault()
-      e.ctrlKey || e.metaKey ? goTo(0, 0) : goTo(row, 0)
+      if (e.ctrlKey || e.metaKey) goTo(0,   0,      e.shiftKey)
+      else                        goTo(row, 0,      e.shiftKey)
       break
 
     case 'End':
       e.preventDefault()
-      e.ctrlKey || e.metaKey ? goTo(maxRow, maxCol) : goTo(row, maxCol)
+      if (e.ctrlKey || e.metaKey) goTo(maxRow, maxCol, e.shiftKey)
+      else                        goTo(row,    maxCol, e.shiftKey)
       break
 
     case 'PageDown':
       e.preventDefault()
-      goTo(Math.min(maxRow, row + visibleRowCount.value), col)
+      goTo(Math.min(maxRow, row + visibleRowCount.value), col, e.shiftKey)
       break
 
     case 'PageUp':
       e.preventDefault()
-      goTo(Math.max(0, row - visibleRowCount.value), col)
+      goTo(Math.max(0, row - visibleRowCount.value), col, e.shiftKey)
       break
 
     case 'Escape':
-      selectedCell.value = null
+      selectedCell.value    = null
+      selectionAnchor.value = null
       break
 
     case 'c':
     case 'C':
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault()
-        const selRow = filteredRows.value[row]
-        const selCol = cols[col]
-        if (selRow && selCol) navigator.clipboard?.writeText(formatCell(selCol, selRow)).catch(() => {})
+        copySelectionToClipboard()
       }
       break
   }
+}
+
+// Build a TSV string from the current selection rectangle and write it to
+// the clipboard. TSV is what Excel/Numbers/Sheets paste-targets expect, so
+// the user can Cmd+C from cathode and Cmd+V into a spreadsheet.
+function copySelectionToClipboard() {
+  if (!selectedCell.value) return
+  const cols    = displayCols.value
+  const rows    = filteredRows.value
+  const a       = selectionAnchor.value ?? selectedCell.value
+  const minR    = Math.min(a.row, selectedCell.value.row)
+  const maxR    = Math.max(a.row, selectedCell.value.row)
+  const minC    = Math.min(a.col, selectedCell.value.col)
+  const maxC    = Math.max(a.col, selectedCell.value.col)
+
+  const lines: string[] = []
+  for (let r = minR; r <= maxR; r++) {
+    const row = rows[r]
+    if (!row) continue
+    const fields: string[] = []
+    for (let c = minC; c <= maxC; c++) {
+      const col = cols[c]
+      if (!col) continue
+      // Replace embedded tabs / newlines so the TSV stays grid-shaped on paste
+      fields.push(formatCell(col, row).replace(/[\t\r\n]+/g, ' '))
+    }
+    lines.push(fields.join('\t'))
+  }
+  const tsv = lines.join('\n')
+  navigator.clipboard?.writeText(tsv).catch(() => {})
 }
 
 // ── Filter popup ──────────────────────────────────────────────────────────────

@@ -32,6 +32,15 @@ export interface DrawGridOpts {
     hoveredRow: number;
     selectedRow: number;
     selectedCol: number;
+    /**
+     * Anchor of the selection range. The selection rectangle spans from
+     * (selectionAnchorRow, selectionAnchorCol) to (selectedRow, selectedCol).
+     * When the anchor equals the active cell (or is -1), selection is a
+     * single cell. Excel-style: shift-arrow / shift-click moves only the
+     * active cell, leaving the anchor in place.
+     */
+    selectionAnchorRow?: number;
+    selectionAnchorCol?: number;
     formatCell: (col: ResolvedCol, row: any) => string;
     getCellStyle: (col: ResolvedCol, row: any) => CSSProperties;
 }

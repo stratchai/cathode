@@ -70,8 +70,17 @@ export interface DrawGridOpts {
   sortDir:      'asc' | 'desc' | null
   colFilters:   Record<string, string>
   hoveredRow:   number        // index in rows, -1 = none
-  selectedRow:  number        // index in rows, -1 = none
+  selectedRow:  number        // index in rows, -1 = none — the "active" cell (cursor)
   selectedCol:  number        // index in cols, -1 = none
+  /**
+   * Anchor of the selection range. The selection rectangle spans from
+   * (selectionAnchorRow, selectionAnchorCol) to (selectedRow, selectedCol).
+   * When the anchor equals the active cell (or is -1), selection is a
+   * single cell. Excel-style: shift-arrow / shift-click moves only the
+   * active cell, leaving the anchor in place.
+   */
+  selectionAnchorRow?: number
+  selectionAnchorCol?: number
   formatCell:   (col: ResolvedCol, row: any) => string
   getCellStyle: (col: ResolvedCol, row: any) => CSSProperties
 }
@@ -187,6 +196,23 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
   const startRow = Math.max(0, Math.floor(scrollY / rowHeight))
   const endRow   = Math.min(rows.length, Math.ceil((scrollY + bodyH) / rowHeight))
 
+  // Selection rectangle bounds — computed from the active cell + anchor.
+  // When the anchor is missing (-1) the range collapses to the active cell.
+  const aR = opts.selectionAnchorRow ?? opts.selectedRow
+  const aC = opts.selectionAnchorCol ?? opts.selectedCol
+  const selMinR = (opts.selectedRow >= 0 && aR >= 0) ? Math.min(opts.selectedRow, aR) : -1
+  const selMaxR = (opts.selectedRow >= 0 && aR >= 0) ? Math.max(opts.selectedRow, aR) : -1
+  const selMinC = (opts.selectedCol >= 0 && aC >= 0) ? Math.min(opts.selectedCol, aC) : -1
+  const selMaxC = (opts.selectedCol >= 0 && aC >= 0) ? Math.max(opts.selectedCol, aC) : -1
+  const isMultiCell = selMaxR > selMinR || selMaxC > selMinC
+
+  // Track outer-rect pixel bounds while drawing cells, so we can stroke a
+  // single border around the entire selection after all cells are rendered.
+  let outerLeft = Number.POSITIVE_INFINITY
+  let outerRight = Number.NEGATIVE_INFINITY
+  let outerTop = Number.POSITIVE_INFINITY
+  let outerBottom = Number.NEGATIVE_INFINITY
+
   for (let ri = startRow; ri < endRow; ri++) {
     const row = rows[ri]
     const ry  = HEADER_H + ri * rowHeight - scrollY
@@ -198,13 +224,16 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
     }
 
     // Hover
-    if (ri === opts.hoveredRow && ri !== opts.selectedRow) {
+    const inSelRowRange = ri >= selMinR && ri <= selMaxR
+    if (ri === opts.hoveredRow && !inSelRowRange) {
       ctx.fillStyle = 'rgba(255,255,255,0.045)'
       ctx.fillRect(0, ry, W, rowHeight)
     }
 
-    // Selected row tint
-    if (ri === opts.selectedRow) {
+    // Single-cell selection still tints the full row (Excel does this too,
+    // via the row-header highlight). Multi-cell selection tints per-cell
+    // below so cells outside the column range stay un-tinted.
+    if (inSelRowRange && !isMultiCell) {
       ctx.fillStyle = hexToRgba(c.accent, 0.10)
       ctx.fillRect(0, ry, W, rowHeight)
     }
@@ -224,6 +253,22 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
 
       if (cx + col.width <= 0) { cx += col.width; continue }
       if (cx >= W) break
+
+      // Per-cell selection tint (multi-cell only — single-cell uses the
+      // full-row tint above so non-selected columns still get a faint hint).
+      const inSelCellRect = inSelRowRange && ci >= selMinC && ci <= selMaxC
+      if (inSelCellRect && isMultiCell) {
+        ctx.fillStyle = hexToRgba(c.accent, 0.14)
+        ctx.fillRect(cx, ry, col.width, rowHeight)
+      }
+
+      // Track outer rect pixels for the post-loop border stroke
+      if (inSelCellRect) {
+        if (cx < outerLeft)             outerLeft = cx
+        if (cx + col.width > outerRight) outerRight = cx + col.width
+        if (ry < outerTop)               outerTop = ry
+        if (ry + rowHeight > outerBottom) outerBottom = ry + rowHeight
+      }
 
       const rawStyle  = opts.getCellStyle(col, row)
       const textColor = (rawStyle.color as string) ?? c.text
@@ -260,7 +305,7 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
       }
       ctx.restore()
 
-      // Selected cell border — drawn OVER text
+      // Active cell border — only the cursor cell, not every cell in range
       if (ri === opts.selectedRow && ci === opts.selectedCol) {
         ctx.strokeStyle = c.accent
         ctx.lineWidth   = 2
@@ -277,6 +322,15 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
 
       cx += col.width
     }
+  }
+
+  // Outer rectangle border — drawn once after all cells, so the multi-cell
+  // selection reads as a single coherent block (Excel's "marching ants"
+  // minus the animation).
+  if (isMultiCell && outerLeft < outerRight && outerTop < outerBottom) {
+    ctx.strokeStyle = c.accent
+    ctx.lineWidth   = 2
+    ctx.strokeRect(outerLeft + 0.5, outerTop + 0.5, outerRight - outerLeft - 1, outerBottom - outerTop - 1)
   }
 
   ctx.restore()
