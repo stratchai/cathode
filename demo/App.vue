@@ -835,8 +835,85 @@ select, input[type="range"] {
 }
 .demo-filter:focus { border-color: var(--cc-accent-text); }
 
-/* ── Grid tab ───────────────────────────────────────────────────── */
-.tab-content { flex: 1; min-height: 0; }
+/* ── Tab content shell — single-component tabs (grid/log/candle/terminal)
+   are wrapped in a CRT-monitor bezel so the demo reads as a physical
+   screen rather than a flat web canvas. cool-retro-term reference:
+   thick dark frame, generous inner margin, strong corner vignette,
+   subtle outer drop shadow. The workspace tab opts out (it renders
+   outside .tab-content) since multi-panel layouts already provide
+   their own chrome via CathodeContainer. ────────────────────────── */
+.tab-content {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  /* Outer bezel — dark "plastic" frame around the screen.
+     Padding creates the visible margin between the bezel and the
+     active screen area. */
+  margin: 14px;
+  padding: 26px 30px 34px;     /* extra at the bottom matches cool-retro-term's heavier lower bezel */
+  background: #0a0a0c;
+  border-radius: 22px / 26px;  /* slightly oval — softer than circular */
+  /* Layered shadows: outer drop for depth, inner ring for the screen
+     recess, subtle highlight on the top edge for "molded plastic". */
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 22px 36px -22px rgba(255, 255, 255, 0.06),
+    inset 0 -18px 36px -18px rgba(0, 0, 0, 0.65);
+  overflow: hidden;
+}
+
+/* Inner screen surface — the actual area cathode renders into.
+   Holds the vignette overlay and clips the canvas to its rounded edge. */
+.tab-content > * {
+  position: relative;
+  width:  100%;
+  height: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  /* Layered insets:
+     - outer hairline ring: dark frame around the screen
+     - phosphor halation: faint accent-coloured glow bleeding from the
+       screen edge onto the bezel — picks up --cc-accent, so it's
+       teal in default-dark, green in phosphor, amber in amber, light
+       green in paper. This is the "slight accent" that reads the
+       curvature: the eye traces the bezel-to-screen boundary because
+       the colour subtly shifts there.
+     - deep inner shadow: screen-recess depth */
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 2px color-mix(in srgb, var(--cc-accent) 18%, transparent),
+    inset 0 0 18px color-mix(in srgb, var(--cc-accent) 10%, transparent),
+    inset 0 0 26px rgba(0, 0, 0, 0.55);
+}
+
+/* Corner vignette — radial gradient layered over the active screen.
+   Stronger than the shader's vignette so we get the "glass tube"
+   darkening at the corners visible in cool-retro-term. */
+.tab-content::after {
+  content: '';
+  position: absolute;
+  /* Inset to match the screen surface (bezel padding above) */
+  inset: 26px 30px 34px 30px;
+  border-radius: 6px;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse at center,
+      transparent 45%,
+      rgba(0, 0, 0, 0.20) 70%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
+  /* Multiply so the vignette darkens what's behind without tinting */
+  mix-blend-mode: multiply;
+  z-index: 2;
+}
+
+/* Bezel stays dark across all themes — the screen-content surface
+   carries the theme via cathode's own theme prop. The accent halation
+   on .tab-content > * picks up --cc-accent so the curvature reads
+   without re-colouring the bezel itself. */
 
 /* ── Mock container content ─────────────────────────────────────── */
 .mock-monitor {
