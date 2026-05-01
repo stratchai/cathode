@@ -876,62 +876,29 @@ select, input[type="range"] {
 }
 
 /* Inner screen surface — the cathode component renders into here.
-   Radial gradient (brighter centre → darker edges) is the *bevel*: it
-   makes the surface look slightly bulged even before the WebGL barrel
-   shader bends content. Background tracks --cc-base so paper mode
-   stays light, dark themes stay dark. */
+   Background is solid var(--cc-base) — no radial bevel, since the
+   shader's barrel + vignette already convey curvature, and any extra
+   dimming on the surface eats into text brightness. The accent ring
+   alone hints at where the screen meets the bezel. */
 .tab-content > * {
   position: relative;
   width:  100%;
   height: 100%;
   border-radius: 10px;
   overflow: hidden;
-  background:
-    radial-gradient(
-      ellipse 110% 130% at center,
-      color-mix(in srgb, var(--cc-base) 92%, white)   0%,
-      var(--cc-base)                                  55%,
-      color-mix(in srgb, var(--cc-base) 92%, black)   100%
-    );
-  /* Faint accent ring at the screen edge — same idea as before: the
-     eye traces the curvature because colour subtly shifts at the
-     boundary. Kept small so it's a hint, not a frame. */
+  background: var(--cc-base);
+  /* Faint accent ring at the screen edge — colour-shift cue for the
+     curvature, not a frame. */
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--cc-accent) 14%, transparent),
     inset 0 0 24px color-mix(in srgb, var(--cc-accent) 8%, transparent);
 }
 
-/* Perimeter vignette — multiply-blended over the screen so the corners
-   darken into the bezel without tinting the rest. This is the main
-   curvature cue at rest. */
-.tab-content::after {
-  content: '';
-  position: absolute;
-  inset: 18px 22px;
-  border-radius: 10px;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      ellipse 95% 120% at center,
-      transparent 50%,
-      rgba(0, 0, 0, 0.14) 78%,
-      rgba(0, 0, 0, 0.42) 100%
-    );
-  mix-blend-mode: multiply;
-  z-index: 2;
-}
-
-/* Paper theme — same gradient mechanics, but the multiply vignette
-   would crush a light bg too aggressively. Soften it. */
-.demo-shell.cathode-light .tab-content::after {
-  background:
-    radial-gradient(
-      ellipse 95% 120% at center,
-      transparent 60%,
-      rgba(0, 0, 0, 0.04) 82%,
-      rgba(0, 0, 0, 0.10) 100%
-    );
-}
+/* No CSS vignette overlay — the shader already does corner darkening
+   via its uVignette uniform. Stacking another multiply-blend layer on
+   top dimmed the text region noticeably; let the shader own the
+   corner falloff so text reads at full brightness. The radial bevel
+   on .tab-content > * still gives the curved-face cue. */
 .demo-shell.cathode-light .tab-content {
   box-shadow:
     0 8px 28px rgba(40, 35, 25, 0.18),

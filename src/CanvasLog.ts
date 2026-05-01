@@ -318,7 +318,10 @@ export function drawLog(canvas: HTMLCanvasElement, opts: DrawLogOpts): void {
     if (opts.showTimestamps && line.timestamp) {
       ctx.fillStyle = c.timestamp
       ctx.textAlign = 'left'
-      if (opts.glow) { ctx.shadowBlur = 3; ctx.shadowColor = c.timestamp }
+      // Bumped from 3 → 6: stronger phosphor halation makes timestamps
+    // read as luminous rather than just tinted, especially under the
+    // shader's barrel + vignette which otherwise eats apparent brightness.
+    if (opts.glow) { ctx.shadowBlur = 6; ctx.shadowColor = c.timestamp }
       ctx.fillText(line.timestamp, tsX, y)
       ctx.shadowBlur = 0
     }
@@ -327,9 +330,19 @@ export function drawLog(canvas: HTMLCanvasElement, opts: DrawLogOpts): void {
     const color = levelColor(c, line.level)
     ctx.fillStyle = color
     ctx.textAlign = 'left'
-    if (opts.glow) { ctx.shadowBlur = 4; ctx.shadowColor = color }
-    ctx.fillText(line.text, textX, y)
-    ctx.shadowBlur = 0
+    if (opts.glow) {
+      // Two-pass glow: a wide halation pass first, then the text again on
+      // top with a tighter halo. Compounds the bloom so letters look
+      // genuinely lit-from-within instead of just having a soft edge.
+      ctx.shadowBlur  = 10
+      ctx.shadowColor = color
+      ctx.fillText(line.text, textX, y)
+      ctx.shadowBlur  = 4
+      ctx.fillText(line.text, textX, y)
+      ctx.shadowBlur = 0
+    } else {
+      ctx.fillText(line.text, textX, y)
+    }
   }
 
   ctx.restore()
