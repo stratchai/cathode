@@ -836,104 +836,102 @@ select, input[type="range"] {
 .demo-filter:focus { border-color: var(--cc-accent-text); }
 
 /* ── Tab content shell — single-component tabs (grid/log/candle/terminal)
-   are wrapped in a CRT-monitor bezel so the demo reads as a physical
-   screen rather than a flat web canvas. cool-retro-term reference:
-   thick dark frame, generous inner margin, strong corner vignette,
-   subtle outer drop shadow. The workspace tab opts out (it renders
-   outside .tab-content) since multi-panel layouts already provide
-   their own chrome via CathodeContainer. ────────────────────────── */
+   read as a curved CRT screen rather than a flat web canvas. The
+   curvature is implied via gradient + vignette, NOT a solid frame:
+     - the screen surface itself is a radial gradient (brighter in the
+       centre, fading toward the edges) so the eye reads a bulge
+     - a perimeter vignette deepens the corners into shadow, like
+       light falling off a curved tube
+     - a soft top-bevel highlight + bottom-bevel shadow suggest the
+       physical face of a CRT without painting a literal frame
+   Workspace tab opts out (it renders outside .tab-content) so
+   multi-panel layouts keep their CathodeContainer chrome. ─────── */
 .tab-content {
   position: relative;
   flex: 1;
   min-height: 0;
-  /* Outer bezel — dark "plastic" frame around the screen.
-     Padding creates the visible margin between the bezel and the
-     active screen area. */
-  margin: 14px;
-  padding: 26px 30px 34px;     /* extra at the bottom matches cool-retro-term's heavier lower bezel */
-  background: #0a0a0c;
-  border-radius: 22px / 26px;  /* slightly oval — softer than circular */
-  /* Layered shadows: outer drop for depth, inner ring for the screen
-     recess, subtle highlight on the top edge for "molded plastic". */
+  margin: 12px;
+  padding: 18px 22px;
+  border-radius: 18px / 22px;
+  /* The bezel area is the SAME surface as the screen, with a faint
+     vertical bevel: a hint of highlight at the top, shadow at the
+     bottom. Reads as "curved face caught by a soft overhead light". */
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--cc-base) 88%, white)  0%,
+      var(--cc-base)                                 28%,
+      var(--cc-base)                                 72%,
+      color-mix(in srgb, var(--cc-base) 90%, black)  100%
+    );
+  /* Subtle outer shadow keeps the panel grounded; no thick "plastic" ring. */
   box-shadow:
-    0 16px 48px rgba(0, 0, 0, 0.55),
-    0 2px 6px rgba(0, 0, 0, 0.45),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
-    inset 0 22px 36px -22px rgba(255, 255, 255, 0.06),
-    inset 0 -18px 36px -18px rgba(0, 0, 0, 0.65);
+    0 8px 28px rgba(0, 0, 0, 0.30),
+    inset 0 0 0 1px color-mix(in srgb, var(--cc-base) 60%, black);
   overflow: hidden;
 }
 
-/* Inner screen surface — the actual area cathode renders into.
-   Holds the vignette overlay and clips the canvas to its rounded edge.
-   Background tracks --cc-base so cathode's transparent-bg themes
-   (none, paper) render against the right surface — paper mode needs a
-   LIGHT screen behind the dark bezel; dark themes need a dark screen. */
+/* Inner screen surface — the cathode component renders into here.
+   Radial gradient (brighter centre → darker edges) is the *bevel*: it
+   makes the surface look slightly bulged even before the WebGL barrel
+   shader bends content. Background tracks --cc-base so paper mode
+   stays light, dark themes stay dark. */
 .tab-content > * {
   position: relative;
   width:  100%;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 10px;
   overflow: hidden;
-  background: var(--cc-base);
-  /* Layered insets:
-     - outer hairline ring: dark frame around the screen
-     - phosphor halation: faint accent-coloured glow bleeding from the
-       screen edge onto the bezel — picks up --cc-accent, so it's
-       teal in default-dark, green in phosphor, amber in amber, light
-       green in paper. This is the "slight accent" that reads the
-       curvature: the eye traces the bezel-to-screen boundary because
-       the colour subtly shifts there.
-     - deep inner shadow: screen-recess depth */
-  box-shadow:
-    inset 0 0 0 1px rgba(0, 0, 0, 0.6),
-    inset 0 0 0 2px color-mix(in srgb, var(--cc-accent) 18%, transparent),
-    inset 0 0 18px color-mix(in srgb, var(--cc-accent) 10%, transparent),
-    inset 0 0 26px rgba(0, 0, 0, 0.55);
-}
-
-/* Paper theme — light screen surface, so the inner shadows need to
-   ease up; otherwise the corner vignette crushes the light bg into
-   near-black. */
-.demo-shell.cathode-light .tab-content > * {
-  box-shadow:
-    inset 0 0 0 1px rgba(0, 0, 0, 0.18),
-    inset 0 0 0 2px color-mix(in srgb, var(--cc-accent) 22%, transparent),
-    inset 0 0 18px color-mix(in srgb, var(--cc-accent) 12%, transparent),
-    inset 0 0 26px rgba(0, 0, 0, 0.10);
-}
-.demo-shell.cathode-light .tab-content::after {
-  /* Soft paper-grade vignette — keeps a hint of corner darkening for
-     curvature without dimming the readable area. */
   background:
     radial-gradient(
-      ellipse at center,
-      transparent 55%,
-      rgba(0, 0, 0, 0.05) 78%,
-      rgba(0, 0, 0, 0.12) 100%
+      ellipse 110% 130% at center,
+      color-mix(in srgb, var(--cc-base) 92%, white)   0%,
+      var(--cc-base)                                  55%,
+      color-mix(in srgb, var(--cc-base) 92%, black)   100%
     );
+  /* Faint accent ring at the screen edge — same idea as before: the
+     eye traces the curvature because colour subtly shifts at the
+     boundary. Kept small so it's a hint, not a frame. */
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--cc-accent) 14%, transparent),
+    inset 0 0 24px color-mix(in srgb, var(--cc-accent) 8%, transparent);
 }
 
-/* Corner vignette — radial gradient layered over the active screen.
-   Stronger than the shader's vignette so we get the "glass tube"
-   darkening at the corners visible in cool-retro-term. */
+/* Perimeter vignette — multiply-blended over the screen so the corners
+   darken into the bezel without tinting the rest. This is the main
+   curvature cue at rest. */
 .tab-content::after {
   content: '';
   position: absolute;
-  /* Inset to match the screen surface (bezel padding above) */
-  inset: 26px 30px 34px 30px;
-  border-radius: 6px;
+  inset: 18px 22px;
+  border-radius: 10px;
   pointer-events: none;
   background:
     radial-gradient(
-      ellipse at center,
-      transparent 45%,
-      rgba(0, 0, 0, 0.20) 70%,
-      rgba(0, 0, 0, 0.55) 100%
+      ellipse 95% 120% at center,
+      transparent 50%,
+      rgba(0, 0, 0, 0.14) 78%,
+      rgba(0, 0, 0, 0.42) 100%
     );
-  /* Multiply so the vignette darkens what's behind without tinting */
   mix-blend-mode: multiply;
   z-index: 2;
+}
+
+/* Paper theme — same gradient mechanics, but the multiply vignette
+   would crush a light bg too aggressively. Soften it. */
+.demo-shell.cathode-light .tab-content::after {
+  background:
+    radial-gradient(
+      ellipse 95% 120% at center,
+      transparent 60%,
+      rgba(0, 0, 0, 0.04) 82%,
+      rgba(0, 0, 0, 0.10) 100%
+    );
+}
+.demo-shell.cathode-light .tab-content {
+  box-shadow:
+    0 8px 28px rgba(40, 35, 25, 0.18),
+    inset 0 0 0 1px color-mix(in srgb, var(--cc-base) 70%, black);
 }
 
 /* Bezel stays dark across all themes — the screen-content surface
