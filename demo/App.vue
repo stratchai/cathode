@@ -253,9 +253,133 @@ const logEntries = ref<LogEntry[]>([])
 // ── Terminal tab — echo handler so the demo has a working roundtrip without
 //    needing any real backend. Consumers wire `submit` to a real handler. ────
 const terminalEntries = ref<LogEntry[]>([
-  { level: 'info', text: "CathodeTerminal demo. Try 'help', 'echo hi', 'time', or 'fail'." },
+  { level: 'info',    text: 'CathodeTerminal demo' },
+  { level: 'debug',   text: "type 'help' to list available commands" },
 ])
 const terminalBusy = ref(false)
+
+// Demo command vocabulary. Each handler returns a single LogEntry or an
+// array of them (multi-line responses). Pure UI — real consumers swap
+// these for a backend round-trip / Claude chat / sk-* invocations.
+type Reply = LogEntry | LogEntry[] | null    // null = handled inline (e.g. `clear`)
+
+const COMMANDS: Record<string, (args: string) => Reply> = {
+  help: () => [
+    { level: 'info',    text: 'commands:' },
+    { level: 'success', text: '  help                 — this list' },
+    { level: 'success', text: '  echo <text>          — print text back' },
+    { level: 'success', text: '  time                 — ISO-8601 timestamp' },
+    { level: 'success', text: '  date                 — human-readable date' },
+    { level: 'success', text: '  whoami               — current user (faked)' },
+    { level: 'success', text: '  pwd                  — current directory (faked)' },
+    { level: 'success', text: '  uname                — fake system info' },
+    { level: 'success', text: '  ls                   — fake file listing' },
+    { level: 'success', text: '  cat <name>           — fake file contents' },
+    { level: 'success', text: '  ping <host>          — simulated latency' },
+    { level: 'success', text: '  colors               — show every log-level colour' },
+    { level: 'success', text: '  cowsay <text>        — ASCII cow' },
+    { level: 'success', text: '  joke                 — deterministic groaner' },
+    { level: 'success', text: '  motd                 — message of the day' },
+    { level: 'success', text: '  fail                 — emit a fake error' },
+    { level: 'success', text: '  clear                — wipe scrollback' },
+  ],
+
+  echo: (args) => ({ level: 'info', text: args || '' }),
+
+  time: () => ({ level: 'success', text: new Date().toISOString() }),
+
+  date: () => ({
+    level: 'success',
+    text:  new Date().toString().replace(/\(.*\)$/, '').trim(),
+  }),
+
+  whoami: () => ({ level: 'success', text: 'cathode-operator' }),
+  pwd:    () => ({ level: 'success', text: '/home/cathode/projects/demo' }),
+
+  uname: () => [
+    { level: 'success', text: 'Cathode 1.0.0 (canvas-1280x720)' },
+    { level: 'debug',   text: 'kernel: vue3-three.js / shader: barrel-r2 / tube: phosphor-emerald' },
+  ],
+
+  ls: () => [
+    { level: 'info', text: 'README.md      ROADMAP.md      package.json' },
+    { level: 'info', text: 'src/           demo/           tests/' },
+    { level: 'info', text: 'dist/          node_modules/   playwright.config.ts' },
+  ],
+
+  cat: (args) => {
+    const file = args.trim()
+    if (!file)             return { level: 'error', text: 'usage: cat <file>' }
+    if (file === 'README.md') return [
+      { level: 'info', text: '# @stratchai/cathode' },
+      { level: 'info', text: '' },
+      { level: 'info', text: 'CRT-styled Vue 3 component library for financial UIs.' },
+      { level: 'info', text: 'Barrel-distorted canvas controls — terminals from a trading floor.' },
+    ]
+    if (file === 'package.json') return [
+      { level: 'info', text: '{' },
+      { level: 'info', text: '  "name": "@stratchai/cathode",' },
+      { level: 'info', text: '  "version": "0.1.0",' },
+      { level: 'info', text: '  "type": "module"' },
+      { level: 'info', text: '}' },
+    ]
+    return { level: 'error', text: `cat: ${file}: no such file (try README.md or package.json)` }
+  },
+
+  ping: (args) => {
+    const host = args.trim() || 'localhost'
+    const lines: LogEntry[] = [
+      { level: 'info', text: `PING ${host}: 56 data bytes` },
+    ]
+    for (let seq = 0; seq < 4; seq++) {
+      const ms = (12 + Math.random() * 18).toFixed(1)
+      lines.push({ level: 'success', text: `64 bytes from ${host}: icmp_seq=${seq} ttl=64 time=${ms} ms` })
+    }
+    return lines
+  },
+
+  colors: () => [
+    { level: 'info',    text: 'level: info    — neutral output' },
+    { level: 'success', text: 'level: success — happy path' },
+    { level: 'warn',    text: 'level: warn    — heads-up' },
+    { level: 'error',   text: 'level: error   — something broke' },
+    { level: 'debug',   text: 'level: debug   — diagnostic chatter' },
+  ],
+
+  cowsay: (args) => {
+    const msg = args.trim() || 'moo'
+    const bar = '─'.repeat(Math.max(2, msg.length + 2))
+    return [
+      { level: 'info', text: ` ╭${bar}╮` },
+      { level: 'info', text: ` │ ${msg} │` },
+      { level: 'info', text: ` ╰${bar}╯` },
+      { level: 'info', text: '         \\   ^__^' },
+      { level: 'info', text: '          \\  (oo)\\_______' },
+      { level: 'info', text: '             (__)\\       )\\/\\' },
+      { level: 'info', text: '                 ||----w |' },
+      { level: 'info', text: '                 ||     ||' },
+    ]
+  },
+
+  joke: () => {
+    const jokes = [
+      "There are 10 kinds of people: those who get binary and those who don't.",
+      'Why did the programmer quit his job? Because he didn\'t get arrays.',
+      'A SQL query walks into a bar, walks up to two tables and asks: "may I JOIN you?"',
+      'I would tell you a UDP joke, but you might not get it.',
+      "Why do Java developers wear glasses? Because they don't C#.",
+    ]
+    return { level: 'info', text: jokes[Math.floor(Math.random() * jokes.length)] }
+  },
+
+  motd: () => [
+    { level: 'success', text: '═══ Cathode CRT — message of the day ═══' },
+    { level: 'info',    text: 'Phosphor temperature nominal. Scanlines steady. Glow within tolerance.' },
+    { level: 'debug',   text: 'last boot: just now · uptime: a few moments · load: 0.42' },
+  ],
+
+  fail: () => ({ level: 'error', text: 'simulated failure: nothing actually went wrong' }),
+}
 
 function onTerminalSubmit(cmd: string) {
   // Echo the user's command into the scrollback first
@@ -265,36 +389,36 @@ function onTerminalSubmit(cmd: string) {
   ]
 
   // Empty submit — real terminals just drop the prompt line and move on.
-  // No response, no busy state.
   const trimmed = cmd.trim()
   if (!trimmed) return
 
-  // Tiny built-in vocabulary — purely demo. Real consumers route to a backend.
-  let level: LogEntry['level'] = 'success'
-  let response: string
-
-  if (trimmed === 'help') {
-    response = "commands: help · echo <text> · time · fail · clear"
-  } else if (trimmed === 'time') {
-    response = new Date().toISOString()
-  } else if (trimmed === 'fail') {
-    level    = 'error'
-    response = 'simulated failure: nothing actually went wrong'
-  } else if (trimmed === 'clear') {
+  // `clear` is special — it wipes the buffer instead of appending.
+  if (trimmed === 'clear') {
     terminalEntries.value = []
     return
-  } else if (trimmed.startsWith('echo ')) {
-    response = trimmed.slice(5)
+  }
+
+  // Parse first word as command, rest as args.
+  const sp     = trimmed.indexOf(' ')
+  const verb   = sp === -1 ? trimmed : trimmed.slice(0, sp)
+  const args   = sp === -1 ? ''      : trimmed.slice(sp + 1)
+  const handler = COMMANDS[verb]
+
+  let reply: Reply
+  if (!handler) {
+    reply = { level: 'warn', text: `unknown command: ${verb} — type 'help' for the demo vocabulary` }
   } else {
-    level    = 'warn'
-    response = `unknown command: ${trimmed} — type 'help' for the demo vocabulary`
+    reply = handler(args)
   }
 
   // Simulate a short async backend round-trip so the busy spinner shows up
   terminalBusy.value = true
   setTimeout(() => {
-    terminalEntries.value = [...terminalEntries.value, { level, text: response }]
-    terminalBusy.value    = false
+    if (reply !== null) {
+      const lines = Array.isArray(reply) ? reply : [reply]
+      terminalEntries.value = [...terminalEntries.value, ...lines]
+    }
+    terminalBusy.value = false
   }, 180)
 }
 
