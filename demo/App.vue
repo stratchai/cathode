@@ -170,18 +170,19 @@ function setStatus(s: 'all' | 'open' | 'closed') {
 }
 
 // ── Workspace tab ─────────────────────────────────────────────────────────────
-// Five panels, one per cathode component, so the workspace tab exercises
-// the whole library at once: CathodeGrid, CathodeCandle, CathodeLog,
-// CathodeTerminal — plus CathodeWorkspace + CathodeContainer wrapping them.
-const WS_IDS = ['trades', 'chart', 'scorecard', 'terminal', 'log'] as const
+// Four panels, one per cathode component, in a 2×2 layout:
+//   Trades (CathodeGrid)   |  Chart    (CathodeCandle)
+//   Log    (CathodeLog)    |  Terminal (CathodeTerminal)
+// Top row gets ~62% of the height (richer content); bottom row ~38%. Left
+// column gets ~62% of the width (Trades + Log have more horizontal info).
+const WS_IDS = ['trades', 'chart', 'log', 'terminal'] as const
 type WsId = typeof WS_IDS[number]
 
 const WS_TITLES: Record<WsId, string> = {
   trades:    'Trades',
   chart:     'Chart',
-  scorecard: 'Scorecard',
-  terminal:  'Terminal',
   log:       'Log',
+  terminal:  'Terminal',
 }
 
 function buildWsLayout(wsW: number, wsH: number): Record<string, ContainerState> {
@@ -189,21 +190,14 @@ function buildWsLayout(wsW: number, wsH: number): Record<string, ContainerState>
   const leftW  = Math.round(wsW * 0.62) - M
   const rightX = leftW + M * 2
   const rightW = wsW - rightX - M
-  const topH   = Math.round(wsH * 0.58)
+  const topH   = Math.round(wsH * 0.62)
   const botY   = topH + M * 2
   const botH   = wsH - botY - M
-  // Right column splits 45 / 25 / 30 between Chart / Scorecard / Terminal —
-  // chart needs the most vertical for its volume pane + axis chrome.
-  const chartH = Math.round(topH * 0.45)
-  const scH    = Math.round(topH * 0.25)
-  const termY  = chartH + M + scH + M
-  const termH  = topH - termY
   return {
-    trades:    { x: M,      y: M,           w: leftW,    h: topH,   visible: true, minimized: false, maximized: false, zIndex: 1 },
-    chart:     { x: rightX, y: M,           w: rightW,   h: chartH, visible: true, minimized: false, maximized: false, zIndex: 2 },
-    scorecard: { x: rightX, y: chartH+M*2,  w: rightW,   h: scH,    visible: true, minimized: false, maximized: false, zIndex: 3 },
-    terminal:  { x: rightX, y: termY+M,     w: rightW,   h: termH,  visible: true, minimized: false, maximized: false, zIndex: 4 },
-    log:       { x: M,      y: botY,        w: wsW-M*2,  h: botH,   visible: true, minimized: false, maximized: false, zIndex: 5 },
+    trades:    { x: M,      y: M,    w: leftW,  h: topH, visible: true, minimized: false, maximized: false, zIndex: 1 },
+    chart:     { x: rightX, y: M,    w: rightW, h: topH, visible: true, minimized: false, maximized: false, zIndex: 2 },
+    log:       { x: M,      y: botY, w: leftW,  h: botH, visible: true, minimized: false, maximized: false, zIndex: 3 },
+    terminal:  { x: rightX, y: botY, w: rightW, h: botH, visible: true, minimized: false, maximized: false, zIndex: 4 },
   }
 }
 
@@ -211,25 +205,6 @@ function buildWsLayout(wsW: number, wsH: number): Record<string, ContainerState>
 const wsLayout = buildWsLayout(window.innerWidth, window.innerHeight - 88)
 
 // ── Workspace panel data ──────────────────────────────────────────────────────
-const scorecardRows = STRATEGIES.slice(0, 8).map(s => ({
-  name: s.replace(/_daily$/, '').replace(/_/g, ' '),
-  trades: Math.floor(Math.random() * 20) + 2,
-  winPct: Number((40 + Math.random() * 40).toFixed(0)),
-  exp:    Number((Math.random() * 3 - 0.5).toFixed(2)),
-}))
-
-// Scorecard column defs — small, dense table for the workspace panel.
-const scorecardColDefs: ColDef[] = [
-  { field: 'name',   headerName: 'Strategy', width: 160, filter: true },
-  { field: 'trades', headerName: 'Trades',    width: 70,  cellStyle: RIGHT },
-  { field: 'winPct', headerName: 'Win%',      width: 70,
-    cellStyle: (p) => ({ ...RIGHT, color: Number(p.value) >= 50 ? '#00bc8c' : '#e74c3c' }),
-    valueFormatter: (p) => `${p.value}%` },
-  { field: 'exp',    headerName: 'Exp%',      width: 80,
-    cellStyle: (p) => ({ ...RIGHT, color: Number(p.value) >= 0 ? '#00bc8c' : '#e74c3c' }),
-    valueFormatter: (p) => `${Number(p.value) >= 0 ? '+' : ''}${p.value}%` },
-]
-
 // Signal feed → CathodeLog entries. Map each event to a level-tinted line.
 const feedLogEntries: LogEntry[] = [
   { level: 'info',    text: '14:02:18 ▲  XLM     momentum breakout     ENTRY' },
@@ -774,25 +749,20 @@ seedLogEntries()
         </template>
       </CathodeContainer>
 
-      <!-- SCORECARD — CathodeGrid -->
-      <CathodeContainer id="scorecard" title="Scorecard" :curvature="curvature" canvas>
-        <template #default="{ resizeKey }">
-          <CathodeGrid
-            :key="resizeKey"
-            :column-defs="scorecardColDefs"
-            :default-col-def="defaultColDef"
-            :row-data="scorecardRows"
-            :row-height="24"
-            :theme="theme"
-            :curvature="curvature"
-            :scanlines="scanlines"
-            :glow="false"
-          />
-        </template>
+      <!-- LOG — CathodeLog (signal feed as level-tinted lines) -->
+      <CathodeContainer id="log" title="Log" :curvature="curvature" canvas>
+        <CathodeLog
+          :entries="feedLogEntries"
+          :theme="theme"
+          :curvature="curvature"
+          :scanlines="scanlines"
+          :glow="glow"
+          :show-timestamps="false"
+        />
       </CathodeContainer>
 
       <!-- TERMINAL — CathodeTerminal -->
-      <CathodeContainer id="terminal" title="Terminal" :curvature="curvature">
+      <CathodeContainer id="terminal" title="Terminal" :curvature="curvature" canvas>
         <CathodeTerminal
           :entries="terminalEntries"
           :theme="theme"
@@ -802,18 +772,6 @@ seedLogEntries()
           :busy="terminalBusy"
           prompt="→ "
           @submit="onTerminalSubmit"
-        />
-      </CathodeContainer>
-
-      <!-- LOG — CathodeLog (signal feed as level-tinted lines) -->
-      <CathodeContainer id="log" title="Log" :curvature="curvature">
-        <CathodeLog
-          :entries="feedLogEntries"
-          :theme="theme"
-          :curvature="curvature"
-          :scanlines="scanlines"
-          :glow="glow"
-          :show-timestamps="false"
         />
       </CathodeContainer>
     </CathodeWorkspace>

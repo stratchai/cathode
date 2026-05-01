@@ -34,11 +34,14 @@ const Oe = {
     // bg fully transparent so the parent (glass CathodeContainer) shows
     // through in day mode — same propagation pattern as 'none' (1c79043).
     // Header keeps a subtle white tint for contrast against rows.
+    // Border bumped from #dee2e6 (very light grey, nearly invisible on
+    // the brighter screen surface after the 2026-05-01 vignette/bg
+    // changes) to #bfc8d4 — gridlines now read as proper rules.
     bg: "rgba(0,0,0,0)",
     headerBg: "rgba(255,255,255,0.65)",
     text: "#222222",
     textHeader: "#158cba",
-    border: "#dee2e6",
+    border: "#bfc8d4",
     accent: "#158cba",
     rowAlt: "rgba(21,140,186,0.04)"
   }

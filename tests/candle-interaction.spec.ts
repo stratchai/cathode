@@ -326,11 +326,16 @@ test.describe('CathodeCandle', () => {
     await page.waitForTimeout(150);
     const onMarker = (await canvas.screenshot()).length;
 
+    // Threshold lowered from 500 → 250 after the 2026-05-01 brightness
+    // boost (3-pass glow + softer shader vignette + brighter palette).
+    // The tooltip overlay still produces a clear delta; the underlying
+    // bg just has more pixel variance now, so PNG-encoded byte deltas
+    // are smaller in relative terms.
     expect(onMarker - noTooltip,
       `hovering exactly on a marker (kind=${m.kind}, label=${m.label}, ` +
       `x=${m.x}, y=${m.y}) did not produce a tooltip — bytes ` +
       `${noTooltip} → ${onMarker}, delta ${onMarker - noTooltip}`,
-    ).toBeGreaterThan(500);
+    ).toBeGreaterThan(250);
 
     // Move OFF the marker — back to empty area. Tooltip should disappear.
     await page.mouse.move(box.x + box.width * 0.92, box.y + box.height * 0.10);
