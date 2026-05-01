@@ -178,8 +178,11 @@ const FRAG = `
     }
 
     if (uVignette > 0.5) {
+      // Falloff coefficient was 1.5 — corners darkened to ~25% of centre,
+      // which crushed text brightness. Dropped to 0.6: corners now hold
+      // ~70%+ luminance so text reads bright across the whole screen.
       vec2  vc   = uv - 0.5;
-      float vign = 1.0 - dot(vc, vc) * 1.5;
+      float vign = 1.0 - dot(vc, vc) * 0.6;
       color.rgb  *= clamp(vign, 0.0, 1.0);
     }
 

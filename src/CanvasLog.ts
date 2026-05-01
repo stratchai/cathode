@@ -54,17 +54,19 @@ export const LOG_THEME_COLORS: Record<string, LogColors> = {
   none: {
     // bg fully transparent so the parent (glass CathodeContainer) shows
     // through. Same propagation pattern as CanvasGrid's `none` theme.
+    // Brightened 2026-05-01: levelInfo, levelDebug, timestamp were too
+    // muted — read as washed-out under barrel + vignette.
     bg: 'rgba(0,0,0,0)',
-    text:         '#e8f2ff',
+    text:         '#f0f8ff',
     border:       '#2a3a50',
-    accent:       '#40a0f0',
+    accent:       '#60c0ff',
     rowAlt:       'rgba(255,255,255,0.018)',
-    levelInfo:    '#c0d0e0',
-    levelWarn:    '#f0c878',
-    levelError:   '#f38080',
-    levelDebug:   '#7090a8',
-    levelSuccess: '#80d0a0',
-    timestamp:    '#6a90b8',
+    levelInfo:    '#e0eaf4',
+    levelWarn:    '#ffd890',
+    levelError:   '#ff9a9a',
+    levelDebug:   '#a0b8d0',
+    levelSuccess: '#a0e8c0',
+    timestamp:    '#90b8d8',
   },
   paper: {
     // bg fully transparent for day-mode glass propagation.
@@ -84,30 +86,33 @@ export const LOG_THEME_COLORS: Record<string, LogColors> = {
     timestamp:    '#888888',
   },
   phosphor: {
+    // Mixed-with-white phosphor — pure #33ff33 reads as muted green
+    // under shader vignette. Lifting to a slightly off-white green
+    // gives the proper "burn through the screen" CRT phosphor look.
     bg:           '#060d06',
-    text:         '#33ff33',
+    text:         '#80ff80',
     border:       '#0a250a',
-    accent:       '#80ff80',
+    accent:       '#a0ffa0',
     rowAlt:       'rgba(51,255,51,0.025)',
-    levelInfo:    '#33ff33',
-    levelWarn:    '#bbff33',
-    levelError:   '#ff5050',
-    levelDebug:   '#22aa22',
-    levelSuccess: '#00ff80',
-    timestamp:    '#00cc00',
+    levelInfo:    '#80ff80',
+    levelWarn:    '#d0ff60',
+    levelError:   '#ff8080',
+    levelDebug:   '#5fcc5f',
+    levelSuccess: '#80ffa0',
+    timestamp:    '#60dd60',
   },
   amber: {
     bg:           '#0a0700',
-    text:         '#ffb000',
+    text:         '#ffd060',
     border:       '#2a1500',
-    accent:       '#ffd060',
+    accent:       '#ffe080',
     rowAlt:       'rgba(255,176,0,0.025)',
-    levelInfo:    '#ffb000',
-    levelWarn:    '#ffd000',
-    levelError:   '#ff5000',
-    levelDebug:   '#aa7000',
-    levelSuccess: '#ffe040',
-    timestamp:    '#ffd000',
+    levelInfo:    '#ffd060',
+    levelWarn:    '#ffe040',
+    levelError:   '#ff7030',
+    levelDebug:   '#cc9030',
+    levelSuccess: '#ffe890',
+    timestamp:    '#ffe080',
   },
 }
 
@@ -331,13 +336,16 @@ export function drawLog(canvas: HTMLCanvasElement, opts: DrawLogOpts): void {
     ctx.fillStyle = color
     ctx.textAlign = 'left'
     if (opts.glow) {
-      // Two-pass glow: a wide halation pass first, then the text again on
-      // top with a tighter halo. Compounds the bloom so letters look
-      // genuinely lit-from-within instead of just having a soft edge.
-      ctx.shadowBlur  = 10
+      // Three-pass glow — wide halation, mid bloom, then sharp text on
+      // top. Each pass deposits more light into the halo around the
+      // glyph; the final pass restores edge definition. Effect: text
+      // reads as luminous CRT phosphor, not just tinted.
       ctx.shadowColor = color
+      ctx.shadowBlur  = 14
       ctx.fillText(line.text, textX, y)
-      ctx.shadowBlur  = 4
+      ctx.shadowBlur  = 7
+      ctx.fillText(line.text, textX, y)
+      ctx.shadowBlur  = 3
       ctx.fillText(line.text, textX, y)
       ctx.shadowBlur = 0
     } else {

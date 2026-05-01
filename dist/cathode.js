@@ -46,10 +46,10 @@ const Oe = {
 function It(t, l) {
   const e = t.getContext("2d");
   if (!e) return;
-  const n = t.width, a = t.height, c = Oe[l.theme] ?? Oe.none, { cols: u, rows: d, pinnedRows: f, rowHeight: s, scrollY: i, scrollX: x, glow: M } = l;
-  e.clearRect(0, 0, n, a), e.fillStyle = c.bg, e.fillRect(0, 0, n, a), e.save(), e.beginPath(), e.rect(0, 0, n, a), e.clip();
-  const S = f.length * s, m = a - ae - S;
-  e.fillStyle = c.headerBg, e.fillRect(0, 0, n, ae), e.textBaseline = "middle", e.textAlign = "left";
+  const n = t.width, a = t.height, f = Oe[l.theme] ?? Oe.none, { cols: u, rows: d, pinnedRows: c, rowHeight: s, scrollY: i, scrollX: x, glow: M } = l;
+  e.clearRect(0, 0, n, a), e.fillStyle = f.bg, e.fillRect(0, 0, n, a), e.save(), e.beginPath(), e.rect(0, 0, n, a), e.clip();
+  const S = c.length * s, m = a - ae - S;
+  e.fillStyle = f.headerBg, e.fillRect(0, 0, n, ae), e.textBaseline = "middle", e.textAlign = "left";
   let h = -x;
   for (let p = 0; p < u.length; p++) {
     const C = u[p];
@@ -59,17 +59,17 @@ function It(t, l) {
     }
     if (h >= n) break;
     const R = !!l.colFilters[C.colId], w = l.sortColId === C.colId, T = (C.colDef.headerName ?? C.colId).toUpperCase();
-    if (e.save(), e.beginPath(), e.rect(h, 0, C.width, ae), e.clip(), e.font = `bold ${dl}px system-ui, -apple-system, sans-serif`, e.fillStyle = R ? c.accent : c.textHeader, M && (e.shadowBlur = 6, e.shadowColor = c.textHeader), e.fillText(T, h + 8, ae / 2), e.shadowBlur = 0, w) {
+    if (e.save(), e.beginPath(), e.rect(h, 0, C.width, ae), e.clip(), e.font = `bold ${dl}px system-ui, -apple-system, sans-serif`, e.fillStyle = R ? f.accent : f.textHeader, M && (e.shadowBlur = 6, e.shadowColor = f.textHeader), e.fillText(T, h + 8, ae / 2), e.shadowBlur = 0, w) {
       const b = e.measureText(T).width;
-      e.font = "8px system-ui, -apple-system, sans-serif", e.fillStyle = c.accent, e.fillText(l.sortDir === "asc" ? "▲" : "▼", h + 8 + b + 4, ae / 2);
+      e.font = "8px system-ui, -apple-system, sans-serif", e.fillStyle = f.accent, e.fillText(l.sortDir === "asc" ? "▲" : "▼", h + 8 + b + 4, ae / 2);
     }
-    C.colDef.filter && (e.font = "13px system-ui, -apple-system, sans-serif", e.fillStyle = R ? c.accent : c.textHeader, e.globalAlpha = R ? 1 : 0.38, e.fillText("⌕", h + C.width - 20, ae / 2), e.globalAlpha = 1), e.restore(), e.strokeStyle = c.border, e.lineWidth = 1, e.beginPath(), e.moveTo(h + C.width - 0.5, 0), e.lineTo(h + C.width - 0.5, ae), e.stroke(), h += C.width;
+    C.colDef.filter && (e.font = "13px system-ui, -apple-system, sans-serif", e.fillStyle = R ? f.accent : f.textHeader, e.globalAlpha = R ? 1 : 0.38, e.fillText("⌕", h + C.width - 20, ae / 2), e.globalAlpha = 1), e.restore(), e.strokeStyle = f.border, e.lineWidth = 1, e.beginPath(), e.moveTo(h + C.width - 0.5, 0), e.lineTo(h + C.width - 0.5, ae), e.stroke(), h += C.width;
   }
-  e.strokeStyle = c.border, e.lineWidth = 1, e.beginPath(), e.moveTo(0, ae - 0.5), e.lineTo(n, ae - 0.5), e.stroke(), e.save(), e.beginPath(), e.rect(0, ae, n, m), e.clip();
+  e.strokeStyle = f.border, e.lineWidth = 1, e.beginPath(), e.moveTo(0, ae - 0.5), e.lineTo(n, ae - 0.5), e.stroke(), e.save(), e.beginPath(), e.rect(0, ae, n, m), e.clip();
   const v = Math.max(0, Math.floor(i / s)), g = Math.min(d.length, Math.ceil((i + m) / s));
   for (let p = v; p < g; p++) {
     const C = d[p], R = ae + p * s - i;
-    p % 2 === 1 && (e.fillStyle = c.rowAlt, e.fillRect(0, R, n, s)), p === l.hoveredRow && p !== l.selectedRow && (e.fillStyle = "rgba(255,255,255,0.045)", e.fillRect(0, R, n, s)), p === l.selectedRow && (e.fillStyle = vl(c.accent, 0.1), e.fillRect(0, R, n, s)), e.strokeStyle = c.border, e.lineWidth = 1, e.beginPath(), e.moveTo(0, R + s - 0.5), e.lineTo(n, R + s - 0.5), e.stroke();
+    p % 2 === 1 && (e.fillStyle = f.rowAlt, e.fillRect(0, R, n, s)), p === l.hoveredRow && p !== l.selectedRow && (e.fillStyle = "rgba(255,255,255,0.045)", e.fillRect(0, R, n, s)), p === l.selectedRow && (e.fillStyle = vl(f.accent, 0.1), e.fillRect(0, R, n, s)), e.strokeStyle = f.border, e.lineWidth = 1, e.beginPath(), e.moveTo(0, R + s - 0.5), e.lineTo(n, R + s - 0.5), e.stroke();
     let w = -x;
     for (let T = 0; T < u.length; T++) {
       const b = u[T];
@@ -78,15 +78,15 @@ function It(t, l) {
         continue;
       }
       if (w >= n) break;
-      const B = l.getCellStyle(b, C), W = B.color ?? c.text, V = B.textAlign ?? "left", G = l.formatCell(b, C);
-      e.save(), e.beginPath(), e.rect(w + 1, R, b.width - 2, s), e.clip(), e.font = `${kt}px system-ui, -apple-system, sans-serif`, e.fillStyle = W, e.textBaseline = "middle", M && (e.shadowBlur = 4, e.shadowColor = W), V === "right" ? (e.textAlign = "right", e.fillText(G, w + b.width - 8, R + s / 2)) : (e.textAlign = "left", e.fillText(G, w + 8, R + s / 2)), e.shadowBlur = 0, e.restore(), p === l.selectedRow && T === l.selectedCol && (e.strokeStyle = c.accent, e.lineWidth = 2, e.strokeRect(w + 1.5, R + 1.5, b.width - 3, s - 3)), e.strokeStyle = c.border, e.lineWidth = 1, e.beginPath(), e.moveTo(w + b.width - 0.5, R), e.lineTo(w + b.width - 0.5, R + s), e.stroke(), w += b.width;
+      const B = l.getCellStyle(b, C), W = B.color ?? f.text, V = B.textAlign ?? "left", G = l.formatCell(b, C);
+      e.save(), e.beginPath(), e.rect(w + 1, R, b.width - 2, s), e.clip(), e.font = `${kt}px system-ui, -apple-system, sans-serif`, e.fillStyle = W, e.textBaseline = "middle", M && (e.shadowBlur = 4, e.shadowColor = W), V === "right" ? (e.textAlign = "right", e.fillText(G, w + b.width - 8, R + s / 2)) : (e.textAlign = "left", e.fillText(G, w + 8, R + s / 2)), e.shadowBlur = 0, e.restore(), p === l.selectedRow && T === l.selectedCol && (e.strokeStyle = f.accent, e.lineWidth = 2, e.strokeRect(w + 1.5, R + 1.5, b.width - 3, s - 3)), e.strokeStyle = f.border, e.lineWidth = 1, e.beginPath(), e.moveTo(w + b.width - 0.5, R), e.lineTo(w + b.width - 0.5, R + s), e.stroke(), w += b.width;
     }
   }
-  if (e.restore(), f.length > 0) {
+  if (e.restore(), c.length > 0) {
     const p = a - S;
-    e.strokeStyle = c.border, e.lineWidth = 1, e.beginPath(), e.moveTo(0, p - 0.5), e.lineTo(n, p - 0.5), e.stroke();
-    for (let C = 0; C < f.length; C++) {
-      const R = f[C], w = p + C * s;
+    e.strokeStyle = f.border, e.lineWidth = 1, e.beginPath(), e.moveTo(0, p - 0.5), e.lineTo(n, p - 0.5), e.stroke();
+    for (let C = 0; C < c.length; C++) {
+      const R = c[C], w = p + C * s;
       e.fillStyle = "rgba(0,0,0,0.35)", e.fillRect(0, w, n, s);
       let T = -x;
       for (let b = 0; b < u.length; b++) {
@@ -96,10 +96,10 @@ function It(t, l) {
           continue;
         }
         if (T >= n) break;
-        const W = l.getCellStyle(B, R), V = W.color ?? c.text, G = W.textAlign ?? "left", K = l.formatCell(B, R);
-        e.save(), e.beginPath(), e.rect(T + 1, w, B.width - 2, s), e.clip(), e.font = `bold ${kt}px system-ui, -apple-system, sans-serif`, e.fillStyle = V, e.textBaseline = "middle", G === "right" ? (e.textAlign = "right", e.fillText(K, T + B.width - 8, w + s / 2)) : (e.textAlign = "left", e.fillText(K, T + 8, w + s / 2)), e.restore(), e.strokeStyle = c.border, e.lineWidth = 1, e.beginPath(), e.moveTo(T + B.width - 0.5, w), e.lineTo(T + B.width - 0.5, w + s), e.stroke(), T += B.width;
+        const W = l.getCellStyle(B, R), V = W.color ?? f.text, G = W.textAlign ?? "left", K = l.formatCell(B, R);
+        e.save(), e.beginPath(), e.rect(T + 1, w, B.width - 2, s), e.clip(), e.font = `bold ${kt}px system-ui, -apple-system, sans-serif`, e.fillStyle = V, e.textBaseline = "middle", G === "right" ? (e.textAlign = "right", e.fillText(K, T + B.width - 8, w + s / 2)) : (e.textAlign = "left", e.fillText(K, T + 8, w + s / 2)), e.restore(), e.strokeStyle = f.border, e.lineWidth = 1, e.beginPath(), e.moveTo(T + B.width - 0.5, w), e.lineTo(T + B.width - 0.5, w + s), e.stroke(), T += B.width;
       }
-      e.strokeStyle = c.border, e.lineWidth = 1, e.beginPath(), e.moveTo(0, w + s - 0.5), e.lineTo(n, w + s - 0.5), e.stroke();
+      e.strokeStyle = f.border, e.lineWidth = 1, e.beginPath(), e.moveTo(0, w + s - 0.5), e.lineTo(n, w + s - 0.5), e.stroke();
     }
   }
   e.restore();
@@ -122,8 +122,8 @@ function Lt(t, l, e) {
   const n = l + e;
   return t >= n - 6 && t <= n + 1;
 }
-function Dt(t, l, e, n, a, c, u, d, f) {
-  const s = t + f;
+function Dt(t, l, e, n, a, f, u, d, c) {
+  const s = t + c;
   let i = -1, x = 0;
   for (let h = 0; h < e.length; h++) {
     if (s >= x && s < x + e[h].width) {
@@ -138,7 +138,7 @@ function Dt(t, l, e, n, a, c, u, d, f) {
     const h = Math.floor((l - (u - M)) / a);
     return { area: "pinned", colIdx: i, rowIdx: h };
   }
-  const S = l - ae + c, m = Math.floor(S / a);
+  const S = l - ae + f, m = Math.floor(S / a);
   return m >= 0 && m < n ? { area: "body", colIdx: i, rowIdx: m } : { area: "none", colIdx: -1, rowIdx: -1 };
 }
 const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
@@ -179,7 +179,7 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
 
     if (uVignette > 0.5) {
       vec2  vc   = uv - 0.5;
-      float vign = 1.0 - dot(vc, vc) * 1.5;
+      float vign = 1.0 - dot(vc, vc) * 0.6;   // softened falloff — see CathodeLog for rationale
       color.rgb  *= clamp(vign, 0.0, 1.0);
     }
 
@@ -203,7 +203,7 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
   },
   emits: ["grid-ready", "row-clicked", "cell-selected", "column-resized", "sort-changed", "filter-changed"],
   setup(t, { emit: l }) {
-    const e = t, n = l, a = _(e.rowData ?? []), c = _(e.pinnedBottomRowData ?? []), u = _(""), d = _(null), f = rt({}), s = rt({}), i = rt(/* @__PURE__ */ new Set()), x = _(0), M = _(0), S = _(0), m = _(0), h = _(0), v = _(-1), g = _(null), p = _(null), C = _({ x: 0, y: ae }), R = _("");
+    const e = t, n = l, a = _(e.rowData ?? []), f = _(e.pinnedBottomRowData ?? []), u = _(""), d = _(null), c = rt({}), s = rt({}), i = rt(/* @__PURE__ */ new Set()), x = _(0), M = _(0), S = _(0), m = _(0), h = _(0), v = _(-1), g = _(null), p = _(null), C = _({ x: 0, y: ae }), R = _("");
     function w(o) {
       return o.colId ?? o.field ?? (o.headerName ? o.headerName.toLowerCase().replace(/\s+/g, "_") : void 0) ?? `col_${Math.random().toString(36).slice(2, 7)}`;
     }
@@ -228,7 +228,7 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
       const o = b.value.reduce((r, y) => r + y.width, 0);
       return Math.max(0, o - M.value);
     }), W = U(() => {
-      const o = c.value.length * e.rowHeight;
+      const o = f.value.length * e.rowHeight;
       return Math.max(0, S.value - ae - o);
     }), V = U(
       () => Math.max(0, q.value.length * e.rowHeight - W.value)
@@ -259,7 +259,7 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
           (k) => String(X(y, k) ?? "").toLowerCase().includes(r)
         )
       ));
-      for (const [y, k] of Object.entries(f)) {
+      for (const [y, k] of Object.entries(c)) {
         if (!k) continue;
         const I = T.value.find((L) => L.colId === y);
         if (I)
@@ -360,7 +360,7 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
         It(ce, {
           cols: b.value,
           rows: q.value,
-          pinnedRows: c.value,
+          pinnedRows: f.value,
           rowHeight: e.rowHeight,
           scrollY: m.value,
           scrollX: h.value,
@@ -368,7 +368,7 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
           glow: !1,
           sortColId: ((y = d.value) == null ? void 0 : y.colId) ?? null,
           sortDir: ((k = d.value) == null ? void 0 : k.dir) ?? null,
-          colFilters: f,
+          colFilters: c,
           hoveredRow: v.value,
           selectedRow: ((I = g.value) == null ? void 0 : I.row) ?? -1,
           selectedCol: ((L = g.value) == null ? void 0 : L.col) ?? -1,
@@ -384,7 +384,7 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
       Le.uniforms.uStrength.value = e.curvature / 45 * 0.55, Le.uniforms.uScanlines.value = e.scanlines && !r ? 1 : 0, Le.uniforms.uVignette.value = r ? 0 : 1, Le.uniforms.uBezel.value.set(o.bg), It(ce, {
         cols: b.value,
         rows: q.value,
-        pinnedRows: c.value,
+        pinnedRows: f.value,
         rowHeight: e.rowHeight,
         scrollY: m.value,
         scrollX: h.value,
@@ -392,7 +392,7 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
         glow: e.glow,
         sortColId: ((z = d.value) == null ? void 0 : z.colId) ?? null,
         sortDir: ((N = d.value) == null ? void 0 : N.dir) ?? null,
-        colFilters: f,
+        colFilters: c,
         hoveredRow: v.value,
         selectedRow: ((le = g.value) == null ? void 0 : le.row) ?? -1,
         selectedCol: ((ne = g.value) == null ? void 0 : ne.col) ?? -1,
@@ -434,7 +434,7 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
         e.rowHeight,
         m.value,
         ce.height,
-        c.value.length,
+        f.value.length,
         h.value
       );
       if (v.value = k.area === "body" ? k.rowIdx : -1, k.area === "header" && k.colIdx >= 0) {
@@ -482,12 +482,12 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
         e.rowHeight,
         m.value,
         ce.height,
-        c.value.length,
+        f.value.length,
         h.value
       );
       if (k.area === "header" && k.colIdx >= 0) {
         const N = b.value[k.colIdx], le = st(k.colIdx, b.value), ne = r + h.value;
-        N.colDef.filter && ml(ne, le, N.width) ? (o.stopPropagation(), p.value === N.colId ? p.value = null : (p.value = N.colId, R.value = (I = f[N.colId]) != null && I.startsWith("__eq__") ? f[N.colId].slice(6) : f[N.colId] ?? "", C.value = { x: Math.max(0, le - h.value), y: ae })) : N.colDef.sortable !== !1 && (p.value = null, d.value = ((L = d.value) == null ? void 0 : L.colId) === N.colId ? d.value.dir === "asc" ? { colId: N.colId, dir: "desc" } : null : { colId: N.colId, dir: "asc" }, n("sort-changed"));
+        N.colDef.filter && ml(ne, le, N.width) ? (o.stopPropagation(), p.value === N.colId ? p.value = null : (p.value = N.colId, R.value = (I = c[N.colId]) != null && I.startsWith("__eq__") ? c[N.colId].slice(6) : c[N.colId] ?? "", C.value = { x: Math.max(0, le - h.value), y: ae })) : N.colDef.sortable !== !1 && (p.value = null, d.value = ((L = d.value) == null ? void 0 : L.colId) === N.colId ? d.value.dir === "asc" ? { colId: N.colId, dir: "desc" } : null : { colId: N.colId, dir: "asc" }, n("sort-changed"));
         return;
       }
       if (p.value = null, k.area === "body" && k.rowIdx >= 0 && k.colIdx >= 0) {
@@ -567,14 +567,14 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
     }
     function Zt(o) {
       const r = o.target.value;
-      R.value = r, r ? f[p.value] = r : delete f[p.value], n("filter-changed");
+      R.value = r, r ? c[p.value] = r : delete c[p.value], n("filter-changed");
     }
     function xt() {
-      p.value && delete f[p.value], R.value = "", p.value = null, n("filter-changed");
+      p.value && delete c[p.value], R.value = "", p.value = null, n("filter-changed");
     }
     const Jt = {
       setGridOption(o, r) {
-        o === "rowData" ? a.value = r : o === "pinnedBottomRowData" ? c.value = r : o === "quickFilterText" && (u.value = r);
+        o === "rowData" ? a.value = r : o === "pinnedBottomRowData" ? f.value = r : o === "quickFilterText" && (u.value = r);
       },
       getColumnState() {
         return e.columnDefs.map((o) => {
@@ -594,19 +594,19 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
           r.hide === !0 && i.add(r.colId), r.hide === !1 && i.delete(r.colId), r.sort && (d.value = { colId: r.colId, dir: r.sort }), r.width && (s[r.colId] = r.width);
       },
       setFilterModel(o) {
-        for (const r of Object.keys(f)) delete f[r];
+        for (const r of Object.keys(c)) delete c[r];
         if (o)
           for (const [r, y] of Object.entries(o))
-            (y == null ? void 0 : y.type) === "equals" ? f[r] = `__eq__${y.filter}` : y != null && y.filter && (f[r] = y.filter);
+            (y == null ? void 0 : y.type) === "equals" ? c[r] = `__eq__${y.filter}` : y != null && y.filter && (c[r] = y.filter);
       },
       getFilterModel() {
         const o = {};
-        for (const [r, y] of Object.entries(f))
+        for (const [r, y] of Object.entries(c))
           y && (o[r] = y.startsWith("__eq__") ? { type: "equals", filter: y.slice(6) } : { type: "contains", filter: y });
         return o;
       },
       async setColumnFilterModel(o, r) {
-        r ? r.type === "equals" ? f[o] = `__eq__${r.filter}` : f[o] = r.filter ?? "" : delete f[o];
+        r ? r.type === "equals" ? c[o] = `__eq__${r.filter}` : c[o] = r.filter ?? "" : delete c[o];
       },
       onFilterChanged() {
       },
@@ -630,12 +630,12 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
         const o = e.columnDefs.find((r) => r.sort);
         d.value = o ? { colId: w(o), dir: o.sort } : null;
         for (const r of Object.keys(s)) delete s[r];
-        for (const r of Object.keys(f)) delete f[r];
+        for (const r of Object.keys(c)) delete c[r];
         u.value = "", m.value = 0, g.value = null, p.value = null;
       }
     };
     H(
-      [q, () => c.value, b, m, v, g],
+      [q, () => f.value, b, m, v, g],
       () => Te(fe)
     ), H(() => e.theme, () => fe()), H(() => e.curvature, () => Te(He)), H(() => e.scanlines, () => fe()), H(() => e.glow, () => fe()), H(g, (o) => {
       if (!o) return;
@@ -655,7 +655,7 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
     We(() => {
       for (const o of e.columnDefs)
         o.hide && i.add(w(o)), o.sort && !d.value && (d.value = { colId: w(o), dir: o.sort });
-      a.value = e.rowData ?? [], c.value = e.pinnedBottomRowData ?? [], document.addEventListener("click", bt), document.addEventListener("mousemove", Q), document.addEventListener("mouseup", xe), Te(() => {
+      a.value = e.rowData ?? [], f.value = e.pinnedBottomRowData ?? [], document.addEventListener("click", bt), document.addEventListener("mousemove", Q), document.addEventListener("mouseup", xe), Te(() => {
         var o;
         wt(), J.value && (J.value.addEventListener("webglcontextlost", yt), J.value.addEventListener("webglcontextrestored", Mt)), me.value && (Ue = new ResizeObserver(() => He()), Ue.observe(me.value), Ke = new IntersectionObserver((r) => {
           r.some((y) => y.isIntersecting) && Pe();
@@ -778,21 +778,23 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
   for (const [n, a] of l)
     e[n] = a;
   return e;
-}, Dn = /* @__PURE__ */ Ge(Ml, [["__scopeId", "data-v-07901c91"]]), Je = {
+}, Dn = /* @__PURE__ */ Ge(Ml, [["__scopeId", "data-v-1ce21ed2"]]), Je = {
   none: {
     // bg fully transparent so the parent (glass CathodeContainer) shows
     // through. Same propagation pattern as CanvasGrid's `none` theme.
+    // Brightened 2026-05-01: levelInfo, levelDebug, timestamp were too
+    // muted — read as washed-out under barrel + vignette.
     bg: "rgba(0,0,0,0)",
-    text: "#e8f2ff",
+    text: "#f0f8ff",
     border: "#2a3a50",
-    accent: "#40a0f0",
+    accent: "#60c0ff",
     rowAlt: "rgba(255,255,255,0.018)",
-    levelInfo: "#c0d0e0",
-    levelWarn: "#f0c878",
-    levelError: "#f38080",
-    levelDebug: "#7090a8",
-    levelSuccess: "#80d0a0",
-    timestamp: "#6a90b8"
+    levelInfo: "#e0eaf4",
+    levelWarn: "#ffd890",
+    levelError: "#ff9a9a",
+    levelDebug: "#a0b8d0",
+    levelSuccess: "#a0e8c0",
+    timestamp: "#90b8d8"
   },
   paper: {
     // bg fully transparent for day-mode glass propagation.
@@ -812,30 +814,33 @@ const hl = ["value"], gl = ["disabled"], pl = ["disabled"], wl = `
     timestamp: "#888888"
   },
   phosphor: {
+    // Mixed-with-white phosphor — pure #33ff33 reads as muted green
+    // under shader vignette. Lifting to a slightly off-white green
+    // gives the proper "burn through the screen" CRT phosphor look.
     bg: "#060d06",
-    text: "#33ff33",
+    text: "#80ff80",
     border: "#0a250a",
-    accent: "#80ff80",
+    accent: "#a0ffa0",
     rowAlt: "rgba(51,255,51,0.025)",
-    levelInfo: "#33ff33",
-    levelWarn: "#bbff33",
-    levelError: "#ff5050",
-    levelDebug: "#22aa22",
-    levelSuccess: "#00ff80",
-    timestamp: "#00cc00"
+    levelInfo: "#80ff80",
+    levelWarn: "#d0ff60",
+    levelError: "#ff8080",
+    levelDebug: "#5fcc5f",
+    levelSuccess: "#80ffa0",
+    timestamp: "#60dd60"
   },
   amber: {
     bg: "#0a0700",
-    text: "#ffb000",
+    text: "#ffd060",
     border: "#2a1500",
-    accent: "#ffd060",
+    accent: "#ffe080",
     rowAlt: "rgba(255,176,0,0.025)",
-    levelInfo: "#ffb000",
-    levelWarn: "#ffd000",
-    levelError: "#ff5000",
-    levelDebug: "#aa7000",
-    levelSuccess: "#ffe040",
-    timestamp: "#ffd000"
+    levelInfo: "#ffd060",
+    levelWarn: "#ffe040",
+    levelError: "#ff7030",
+    levelDebug: "#cc9030",
+    levelSuccess: "#ffe890",
+    timestamp: "#ffe080"
   }
 };
 function Sl(t, l) {
@@ -867,12 +872,12 @@ function Tl(t, l, e) {
       n.push(a);
       continue;
     }
-    const c = a.split(/(\s+)/);
+    const f = a.split(/(\s+)/);
     let u = "";
-    for (const d of c) {
-      const f = u + d;
-      if (t.measureText(f).width <= e)
-        u = f;
+    for (const d of f) {
+      const c = u + d;
+      if (t.measureText(c).width <= e)
+        u = c;
       else if (u && (n.push(u.replace(/\s+$/, "")), u = ""), t.measureText(d).width > e) {
         let s = "";
         for (const i of d)
@@ -896,15 +901,15 @@ function kl(t, l) {
   return Math.ceil(t.measureText(l).width) + 12;
 }
 function Il(t) {
-  const { entries: l, ctx: e, textMaxWidth: n, showTimestamps: a, wordWrap: c } = t, u = t.formatTs ?? Yt;
+  const { entries: l, ctx: e, textMaxWidth: n, showTimestamps: a, wordWrap: f } = t, u = t.formatTs ?? Yt;
   e.font = vt;
   const d = [];
-  for (let f = 0; f < l.length; f++) {
-    const s = l[f], i = s.level ?? "info", x = a && s.ts != null ? u(s.ts) : "", M = c ? Tl(e, s.text, n) : s.text.split(`
+  for (let c = 0; c < l.length; c++) {
+    const s = l[c], i = s.level ?? "info", x = a && s.ts != null ? u(s.ts) : "", M = f ? Tl(e, s.text, n) : s.text.split(`
 `);
     for (let S = 0; S < M.length; S++)
       d.push({
-        entryIdx: f,
+        entryIdx: c,
         text: M[S],
         level: i,
         timestamp: S === 0 ? x : "",
@@ -916,20 +921,20 @@ function Il(t) {
 function Et(t, l) {
   const e = t.getContext("2d");
   if (!e) return;
-  const n = t.width, a = t.height, c = Je[l.theme] ?? Je.none;
-  e.clearRect(0, 0, n, a), e.fillStyle = c.bg, e.fillRect(0, 0, n, a), e.save(), e.beginPath(), e.rect(0, 0, n, a), e.clip(), e.font = vt, e.textBaseline = "middle";
-  const u = l.visualLines, d = Ze, f = l.showTimestamps ? Ze + l.timestampWidth : Ze, s = Math.max(0, Math.floor((l.scrollY - Ve) / pe)), i = Math.min(u.length, Math.ceil((l.scrollY + a - Ve) / pe) + 1);
+  const n = t.width, a = t.height, f = Je[l.theme] ?? Je.none;
+  e.clearRect(0, 0, n, a), e.fillStyle = f.bg, e.fillRect(0, 0, n, a), e.save(), e.beginPath(), e.rect(0, 0, n, a), e.clip(), e.font = vt, e.textBaseline = "middle";
+  const u = l.visualLines, d = Ze, c = l.showTimestamps ? Ze + l.timestampWidth : Ze, s = Math.max(0, Math.floor((l.scrollY - Ve) / pe)), i = Math.min(u.length, Math.ceil((l.scrollY + a - Ve) / pe) + 1);
   for (let x = s; x < i; x++) {
     const M = u[x], S = Ve + x * pe - l.scrollY + pe / 2;
     if (M.entryIdx % 2 === 1 && M.isFirstFrag) {
-      e.fillStyle = c.rowAlt;
+      e.fillStyle = f.rowAlt;
       let h = 1;
       for (; x + h < i && u[x + h].entryIdx === M.entryIdx; ) h++;
       e.fillRect(0, S - pe / 2, n, pe * h);
     }
-    x === l.hoveredLine && (e.fillStyle = "rgba(255,255,255,0.045)", e.fillRect(0, S - pe / 2, n, pe)), l.showTimestamps && M.timestamp && (e.fillStyle = c.timestamp, e.textAlign = "left", l.glow && (e.shadowBlur = 6, e.shadowColor = c.timestamp), e.fillText(M.timestamp, d, S), e.shadowBlur = 0);
-    const m = Sl(c, M.level);
-    e.fillStyle = m, e.textAlign = "left", l.glow ? (e.shadowBlur = 10, e.shadowColor = m, e.fillText(M.text, f, S), e.shadowBlur = 4, e.fillText(M.text, f, S), e.shadowBlur = 0) : e.fillText(M.text, f, S);
+    x === l.hoveredLine && (e.fillStyle = "rgba(255,255,255,0.045)", e.fillRect(0, S - pe / 2, n, pe)), l.showTimestamps && M.timestamp && (e.fillStyle = f.timestamp, e.textAlign = "left", l.glow && (e.shadowBlur = 6, e.shadowColor = f.timestamp), e.fillText(M.timestamp, d, S), e.shadowBlur = 0);
+    const m = Sl(f, M.level);
+    e.fillStyle = m, e.textAlign = "left", l.glow ? (e.shadowColor = m, e.shadowBlur = 14, e.fillText(M.text, c, S), e.shadowBlur = 7, e.fillText(M.text, c, S), e.shadowBlur = 3, e.fillText(M.text, c, S), e.shadowBlur = 0) : e.fillText(M.text, c, S);
   }
   e.restore();
 }
@@ -977,8 +982,11 @@ const El = `
     }
 
     if (uVignette > 0.5) {
+      // Falloff coefficient was 1.5 — corners darkened to ~25% of centre,
+      // which crushed text brightness. Dropped to 0.6: corners now hold
+      // ~70%+ luminance so text reads bright across the whole screen.
       vec2  vc   = uv - 0.5;
-      float vign = 1.0 - dot(vc, vc) * 1.5;
+      float vign = 1.0 - dot(vc, vc) * 0.6;
       color.rgb  *= clamp(vign, 0.0, 1.0);
     }
 
@@ -999,7 +1007,7 @@ const El = `
     maxLines: { default: 0 }
   },
   setup(t, { expose: l }) {
-    const e = t, n = _(null), a = _(null), c = _(0), u = _(0), d = _(0), f = _(-1), s = _(!0), i = U(() => {
+    const e = t, n = _(null), a = _(null), f = _(0), u = _(0), d = _(0), c = _(-1), s = _(!0), i = U(() => {
       const E = e.entries ?? [];
       return e.maxLines > 0 && E.length > e.maxLines ? E.slice(E.length - e.maxLines) : E;
     }), x = U(() => {
@@ -1022,7 +1030,7 @@ const El = `
       M.value = Y;
       const Q = Math.max(
         1,
-        c.value - Ze * 2 - Y
+        f.value - Ze * 2 - Y
       );
       S.value = Il({
         entries: i.value,
@@ -1037,7 +1045,7 @@ const El = `
     H(v, () => {
       s.value ? d.value = v.value : d.value = Math.min(d.value, v.value);
     }), H(
-      [i, c, () => e.showTimestamps, () => e.wordWrap, x],
+      [i, f, () => e.showTimestamps, () => e.wordWrap, x],
       () => {
         m(), Te(V);
       },
@@ -1074,7 +1082,7 @@ const El = `
       const E = n.value.clientWidth, Y = n.value.clientHeight;
       if (!E || !Y) return;
       const Q = b.width !== E || b.height !== Y;
-      Q && (b.width = E, b.height = Y, c.value = E, u.value = Y, m(), g ? (Q && T && (T.dispose(), T = new O.CanvasTexture(b), T.minFilter = O.LinearFilter, T.magFilter = O.LinearFilter, w && (w.uniforms.uTex.value = T)), g.setPixelRatio(window.devicePixelRatio || 1), g.setSize(E, Y)) : a.value && (a.value.width = E, a.value.height = Y, a.value.style.width = E + "px", a.value.style.height = Y + "px"), s.value && (d.value = Math.max(0, h.value - u.value)), V());
+      Q && (b.width = E, b.height = Y, f.value = E, u.value = Y, m(), g ? (Q && T && (T.dispose(), T = new O.CanvasTexture(b), T.minFilter = O.LinearFilter, T.magFilter = O.LinearFilter, w && (w.uniforms.uTex.value = T)), g.setPixelRatio(window.devicePixelRatio || 1), g.setSize(E, Y)) : a.value && (a.value.width = E, a.value.height = Y, a.value.style.width = E + "px", a.value.style.height = Y + "px"), s.value && (d.value = Math.max(0, h.value - u.value)), V());
     }
     function V() {
       if (!(b != null && b.width)) return;
@@ -1087,7 +1095,7 @@ const El = `
           glow: !1,
           showTimestamps: e.showTimestamps,
           timestampWidth: M.value,
-          hoveredLine: f.value
+          hoveredLine: c.value
         });
         const Y = a.value.getContext("2d");
         Y && Y.drawImage(b, 0, 0);
@@ -1102,10 +1110,10 @@ const El = `
         glow: e.glow,
         showTimestamps: e.showTimestamps,
         timestampWidth: M.value,
-        hoveredLine: f.value
+        hoveredLine: c.value
       }), T.needsUpdate = !0, g.render(C, R);
     }
-    H(() => e.theme, () => V()), H(() => e.curvature, () => V()), H(() => e.scanlines, () => V()), H(() => e.glow, () => V()), H(d, () => V()), H(f, () => V());
+    H(() => e.theme, () => V()), H(() => e.curvature, () => V()), H(() => e.scanlines, () => V()), H(() => e.glow, () => V()), H(d, () => V()), H(c, () => V());
     function G(E) {
       if (!a.value) return [-1, -1];
       const Y = a.value.getBoundingClientRect();
@@ -1133,13 +1141,13 @@ const El = `
     function F(E) {
       const [, Y] = G(E);
       if (Y < 0) {
-        f.value = -1;
+        c.value = -1;
         return;
       }
-      f.value = Ll(Y, d.value, S.value.length);
+      c.value = Ll(Y, d.value, S.value.length);
     }
     function P() {
-      f.value = -1;
+      c.value = -1;
     }
     l({
       /** Force-scroll to the latest entry. Resumes autoscroll. */
@@ -1194,7 +1202,7 @@ const El = `
       }, null, 544)
     ], 4));
   }
-}), Bl = /* @__PURE__ */ Ge(Fl, [["__scopeId", "data-v-d2d092f3"]]), _l = ["disabled"], Al = /* @__PURE__ */ Xe({
+}), Bl = /* @__PURE__ */ Ge(Fl, [["__scopeId", "data-v-669b69f1"]]), _l = ["disabled"], Al = /* @__PURE__ */ Xe({
   __name: "CathodeTerminal",
   props: {
     entries: {},
@@ -1214,10 +1222,10 @@ const El = `
   },
   emits: ["submit"],
   setup(t, { expose: l, emit: e }) {
-    const n = t, a = e, c = _(null), u = _(null), d = _(""), f = _([]), s = _(-1);
+    const n = t, a = e, f = _(null), u = _(null), d = _(""), c = _([]), s = _(-1);
     let i = "";
     function x(w) {
-      w.trim() && (f.value.length && f.value[f.value.length - 1] === w || (f.value.push(w), f.value.length > n.historyLimit && f.value.splice(0, f.value.length - n.historyLimit)));
+      w.trim() && (c.value.length && c.value[c.value.length - 1] === w || (c.value.push(w), c.value.length > n.historyLimit && c.value.splice(0, c.value.length - n.historyLimit)));
     }
     function M(w) {
       if (!n.disabled) {
@@ -1228,13 +1236,13 @@ const El = `
           return;
         }
         if (w.key === "ArrowUp") {
-          if (!f.value.length) return;
-          w.preventDefault(), s.value === -1 ? (i = d.value, s.value = f.value.length - 1) : s.value > 0 && s.value--, d.value = f.value[s.value];
+          if (!c.value.length) return;
+          w.preventDefault(), s.value === -1 ? (i = d.value, s.value = c.value.length - 1) : s.value > 0 && s.value--, d.value = c.value[s.value];
           return;
         }
         if (w.key === "ArrowDown") {
           if (s.value === -1) return;
-          w.preventDefault(), s.value < f.value.length - 1 ? (s.value++, d.value = f.value[s.value]) : (s.value = -1, d.value = i, i = "");
+          w.preventDefault(), s.value < c.value.length - 1 ? (s.value++, d.value = c.value[s.value]) : (s.value = -1, d.value = i, i = "");
           return;
         }
       }
@@ -1278,7 +1286,7 @@ const El = `
       v();
     }), (w, T) => (ie(), re("div", {
       ref_key: "wrapEl",
-      ref: c,
+      ref: f,
       class: "cathode-terminal-wrap",
       onClick: C
     }, [
@@ -1383,32 +1391,32 @@ const El = `
   }
 }, zl = 0.18, qe = 8, mt = 22, Wl = 4, De = 8, ze = 56, Ht = 42, Fe = "10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", Yl = "9px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", ut = 4, Hl = 1, Pl = 1;
 function $l(t, l, e, n = 0, a = !1) {
-  const c = a ? Ht : ze, u = Math.max(0, l - De - c), d = Math.max(1, Math.floor(u / e)), f = Math.min(d, t);
-  return { firstIdx: Math.max(0, t - f - Math.floor(n / e)), count: f, slotW: e };
+  const f = a ? Ht : ze, u = Math.max(0, l - De - f), d = Math.max(1, Math.floor(u / e)), c = Math.min(d, t);
+  return { firstIdx: Math.max(0, t - c - Math.floor(n / e)), count: c, slotW: e };
 }
 function Ol(t, l, e) {
   if (!t.length || e <= 0)
     return { min: 0, max: 1, maxVol: 1 };
-  let n = 1 / 0, a = -1 / 0, c = 0;
+  let n = 1 / 0, a = -1 / 0, f = 0;
   const u = Math.min(t.length, l + e);
-  for (let f = l; f < u; f++) {
-    const s = t[f];
-    s && (s.low < n && (n = s.low), s.high > a && (a = s.high), s.volume > c && (c = s.volume));
+  for (let c = l; c < u; c++) {
+    const s = t[c];
+    s && (s.low < n && (n = s.low), s.high > a && (a = s.high), s.volume > f && (f = s.volume));
   }
   if (!isFinite(n) || !isFinite(a) || n === a) {
-    const f = isFinite(n) ? n : 0;
-    return { min: f - 1, max: f + 1, maxVol: Math.max(1, c) };
+    const c = isFinite(n) ? n : 0;
+    return { min: c - 1, max: c + 1, maxVol: Math.max(1, f) };
   }
   const d = (a - n) * 0.04;
-  return { min: n - d, max: a + d, maxVol: Math.max(1, c) };
+  return { min: n - d, max: a + d, maxVol: Math.max(1, f) };
 }
 function Vl(t, l, e = !1) {
-  const n = e ? Wl : mt, a = Math.max(1, t - qe - n - ut), c = Math.max(0, Math.round(a * l)), u = a - c;
+  const n = e ? Wl : mt, a = Math.max(1, t - qe - n - ut), f = Math.max(0, Math.round(a * l)), u = a - f;
   return {
     priceY0: qe,
     priceY1: qe + u,
     volumeY0: qe + u + ut,
-    volumeY1: qe + u + ut + c
+    volumeY1: qe + u + ut + f
   };
 }
 function Ce(t, l, e, n) {
@@ -1423,27 +1431,27 @@ function Ae(t) {
   return t.toLocaleString("en-US", e);
 }
 function ht(t) {
-  const l = new Date(t), e = String(l.getMonth() + 1).padStart(2, "0"), n = String(l.getDate()).padStart(2, "0"), a = String(l.getHours()).padStart(2, "0"), c = String(l.getMinutes()).padStart(2, "0");
-  return `${e}-${n} ${a}:${c}`;
+  const l = new Date(t), e = String(l.getMonth() + 1).padStart(2, "0"), n = String(l.getDate()).padStart(2, "0"), a = String(l.getHours()).padStart(2, "0"), f = String(l.getMinutes()).padStart(2, "0");
+  return `${e}-${n} ${a}:${f}`;
 }
 function Xl(t, l) {
   if (t <= 0 || !isFinite(t)) return 1;
   const e = t / Math.max(1, l), n = Math.pow(10, Math.floor(Math.log10(e))), a = e / n;
-  let c;
-  return a < 1.5 ? c = 1 : a < 3 ? c = 2 : a < 7 ? c = 5 : c = 10, c * n;
+  let f;
+  return a < 1.5 ? f = 1 : a < 3 ? f = 2 : a < 7 ? f = 5 : f = 10, f * n;
 }
 function Rt(t, l) {
   var S, m, h, v, g;
   const e = t.getContext("2d");
   if (!e) return;
-  const n = t.width, a = t.height, c = Qe[l.theme] ?? Qe.none, u = l.colors ? { ...c, ...l.colors } : c, d = !!l.compact;
+  const n = t.width, a = t.height, f = Qe[l.theme] ?? Qe.none, u = l.colors ? { ...f, ...l.colors } : f, d = !!l.compact;
   if (e.clearRect(0, 0, n, a), e.fillStyle = u.bg, e.fillRect(0, 0, n, a), !l.candles.length) return;
   e.save(), e.beginPath(), e.rect(0, 0, n, a), e.clip();
-  const f = $l(l.candles.length, n, l.slotW, l.scrollX, d), s = Ol(l.candles, f.firstIdx, f.count), i = Vl(a, l.showVolume ? l.volumeFraction : 0, d), x = Math.max(Hl, Math.floor(l.slotW * 0.7)), M = Math.min(l.candles.length, f.firstIdx + f.count);
-  for (let p = f.firstIdx; p < M; p++) {
+  const c = $l(l.candles.length, n, l.slotW, l.scrollX, d), s = Ol(l.candles, c.firstIdx, c.count), i = Vl(a, l.showVolume ? l.volumeFraction : 0, d), x = Math.max(Hl, Math.floor(l.slotW * 0.7)), M = Math.min(l.candles.length, c.firstIdx + c.count);
+  for (let p = c.firstIdx; p < M; p++) {
     const C = l.candles[p];
     if (!C) continue;
-    const R = Be(p, f.firstIdx, l.slotW), w = Ce(C.open, s, i.priceY0, i.priceY1), T = Ce(C.close, s, i.priceY0, i.priceY1), b = Ce(C.high, s, i.priceY0, i.priceY1), B = Ce(C.low, s, i.priceY0, i.priceY1), W = C.close >= C.open, V = W ? u.wickBull : u.wickBear, G = W ? u.candleBull : u.candleBear;
+    const R = Be(p, c.firstIdx, l.slotW), w = Ce(C.open, s, i.priceY0, i.priceY1), T = Ce(C.close, s, i.priceY0, i.priceY1), b = Ce(C.high, s, i.priceY0, i.priceY1), B = Ce(C.low, s, i.priceY0, i.priceY1), W = C.close >= C.open, V = W ? u.wickBull : u.wickBear, G = W ? u.candleBull : u.candleBear;
     l.glow && (e.shadowBlur = 4, e.shadowColor = G), e.strokeStyle = V, e.lineWidth = Pl, e.beginPath(), e.moveTo(Math.round(R) + 0.5, b), e.lineTo(Math.round(R) + 0.5, B), e.stroke(), e.fillStyle = G;
     const K = Math.min(w, T), de = Math.max(1, Math.abs(T - w));
     if (e.fillRect(
@@ -1462,10 +1470,10 @@ function Rt(t, l) {
     }
   }
   if ((S = l.overlays) != null && S.length)
-    for (const p of l.overlays) Nl(e, p, f, s, i, l.slotW);
-  (m = l.markers) != null && m.length && Ql(e, u, l.markers, l.candles, f, s, i, l.slotW), en(e, u, s, i, n, d), d || (tn(e, u, l.candles, f, l.slotW, a), Zl(e, u, l.candles, n, a)), (h = l.overlays) != null && h.length && Ul(e, u, l.overlays, i), l.hover && (ln(e, u, l.candles, f, s, i, l.slotW, l.hover, n), Kl(e, u, l.candles, f, l.slotW, l.hover, i, ((v = l.overlays) == null ? void 0 : v.length) ?? 0), (g = l.markers) != null && g.length && jl(e, u, l.markers, l.candles, f, s, i, l.slotW, l.hover, n)), e.restore();
+    for (const p of l.overlays) Nl(e, p, c, s, i, l.slotW);
+  (m = l.markers) != null && m.length && Ql(e, u, l.markers, l.candles, c, s, i, l.slotW), en(e, u, s, i, n, d), d || (tn(e, u, l.candles, c, l.slotW, a), Zl(e, u, l.candles, n, a)), (h = l.overlays) != null && h.length && Ul(e, u, l.overlays, i), l.hover && (ln(e, u, l.candles, c, s, i, l.slotW, l.hover, n), Kl(e, u, l.candles, c, l.slotW, l.hover, i, ((v = l.overlays) == null ? void 0 : v.length) ?? 0), (g = l.markers) != null && g.length && jl(e, u, l.markers, l.candles, c, s, i, l.slotW, l.hover, n)), e.restore();
 }
-function Nl(t, l, e, n, a, c) {
+function Nl(t, l, e, n, a, f) {
   var d;
   const u = e.firstIdx + e.count;
   if (t.save(), t.beginPath(), t.rect(
@@ -1475,16 +1483,16 @@ function Nl(t, l, e, n, a, c) {
     999999,
     a.priceY1 - a.priceY0
   ), t.clip(), l.kind === "line")
-    je(t, l.data, e.firstIdx, u, c, n, a, l.color, l.lineWidth ?? 1, l.dashed === !0);
+    je(t, l.data, e.firstIdx, u, f, n, a, l.color, l.lineWidth ?? 1, l.dashed === !0);
   else {
-    const f = Pt(l.color, l.fillAlpha ?? 0.08);
-    Gl(t, l.upper, l.lower, e.firstIdx, u, c, n, a, f), je(t, l.upper, e.firstIdx, u, c, n, a, l.color, 1, !1), je(t, l.lower, e.firstIdx, u, c, n, a, l.color, 1, !1), (d = l.middle) != null && d.length && je(t, l.middle, e.firstIdx, u, c, n, a, l.color, 1, l.middleDashed !== !1);
+    const c = Pt(l.color, l.fillAlpha ?? 0.08);
+    Gl(t, l.upper, l.lower, e.firstIdx, u, f, n, a, c), je(t, l.upper, e.firstIdx, u, f, n, a, l.color, 1, !1), je(t, l.lower, e.firstIdx, u, f, n, a, l.color, 1, !1), (d = l.middle) != null && d.length && je(t, l.middle, e.firstIdx, u, f, n, a, l.color, 1, l.middleDashed !== !1);
   }
   t.restore();
 }
-function je(t, l, e, n, a, c, u, d, f, s) {
+function je(t, l, e, n, a, f, u, d, c, s) {
   if (!l || !l.length) return;
-  t.strokeStyle = d, t.lineWidth = f, t.setLineDash(s ? [4, 3] : []), t.beginPath();
+  t.strokeStyle = d, t.lineWidth = c, t.setLineDash(s ? [4, 3] : []), t.beginPath();
   let i = !1;
   for (let x = e; x < n; x++) {
     const M = l[x];
@@ -1492,14 +1500,14 @@ function je(t, l, e, n, a, c, u, d, f, s) {
       i && (t.stroke(), t.beginPath(), i = !1);
       continue;
     }
-    const S = Be(x, e, a), m = Ce(M, c, u.priceY0, u.priceY1);
+    const S = Be(x, e, a), m = Ce(M, f, u.priceY0, u.priceY1);
     i ? t.lineTo(S, m) : (t.moveTo(S, m), i = !0);
   }
   i && t.stroke(), t.setLineDash([]);
 }
-function Gl(t, l, e, n, a, c, u, d, f) {
+function Gl(t, l, e, n, a, f, u, d, c) {
   if (!(l != null && l.length) || !(e != null && e.length)) return;
-  t.fillStyle = f;
+  t.fillStyle = c;
   let s = !1, i = -1;
   for (let x = n; x <= a; x++) {
     const M = l[x], S = e[x], m = x < a && typeof M == "number" && typeof S == "number" && isFinite(M) && isFinite(S);
@@ -1507,11 +1515,11 @@ function Gl(t, l, e, n, a, c, u, d, f) {
       const h = m ? x + 1 : x;
       t.beginPath();
       for (let v = i; v < h; v++) {
-        const g = Be(v, n, c), p = Ce(l[v], u, d.priceY0, d.priceY1);
+        const g = Be(v, n, f), p = Ce(l[v], u, d.priceY0, d.priceY1);
         v === i ? t.moveTo(g, p) : t.lineTo(g, p);
       }
       for (let v = h - 1; v >= i; v--) {
-        const g = Be(v, n, c), p = Ce(e[v], u, d.priceY0, d.priceY1);
+        const g = Be(v, n, f), p = Ce(e[v], u, d.priceY0, d.priceY1);
         t.lineTo(g, p);
       }
       t.closePath(), t.fill(), s = !1;
@@ -1521,8 +1529,8 @@ function Gl(t, l, e, n, a, c, u, d, f) {
 function Pt(t, l) {
   const e = Math.max(0, Math.min(1, l));
   if (t.startsWith("#") && t.length === 7) {
-    const n = parseInt(t.slice(1, 3), 16), a = parseInt(t.slice(3, 5), 16), c = parseInt(t.slice(5, 7), 16);
-    return `rgba(${n},${a},${c},${e})`;
+    const n = parseInt(t.slice(1, 3), 16), a = parseInt(t.slice(3, 5), 16), f = parseInt(t.slice(5, 7), 16);
+    return `rgba(${n},${a},${f},${e})`;
   }
   return t.startsWith("rgba") ? t.replace(/[\d.]+\)$/, `${e})`) : t.startsWith("rgb(") ? t.replace(/^rgb\(/, "rgba(").replace(/\)$/, `,${e})`) : t;
 }
@@ -1530,22 +1538,22 @@ function Ul(t, l, e, n) {
   const a = e.filter((h) => !!h.label);
   if (!a.length) return;
   t.save(), t.font = Fe;
-  const c = 8, u = 5, d = 12, f = 6, s = 14;
+  const f = 8, u = 5, d = 12, c = 6, s = 14;
   let i = 0;
   for (const h of a) {
     const v = t.measureText(h.label).width;
     v > i && (i = v);
   }
-  const x = c * 2 + d + f + i, M = u * 2 + s * a.length, S = De + 4, m = n.priceY0 + 4;
+  const x = f * 2 + d + c + i, M = u * 2 + s * a.length, S = De + 4, m = n.priceY0 + 4;
   t.fillStyle = l.panelBg, t.fillRect(S, m, x, M), t.textBaseline = "middle", t.textAlign = "left";
   for (let h = 0; h < a.length; h++) {
-    const v = a[h], g = m + u + s * (h + 0.5), p = S + c;
-    v.kind === "line" ? (t.strokeStyle = v.color, t.lineWidth = v.lineWidth ?? 1, t.setLineDash(v.dashed ? [3, 3] : []), t.beginPath(), t.moveTo(p, g), t.lineTo(p + d, g), t.stroke(), t.setLineDash([])) : (t.fillStyle = Pt(v.color, v.fillAlpha ?? 0.2), t.fillRect(p, g - 4, d, 8), t.strokeStyle = v.color, t.lineWidth = 1, t.strokeRect(p + 0.5, g - 4 + 0.5, d - 1, 7)), t.fillStyle = l.text, t.fillText(v.label, p + d + f, g);
+    const v = a[h], g = m + u + s * (h + 0.5), p = S + f;
+    v.kind === "line" ? (t.strokeStyle = v.color, t.lineWidth = v.lineWidth ?? 1, t.setLineDash(v.dashed ? [3, 3] : []), t.beginPath(), t.moveTo(p, g), t.lineTo(p + d, g), t.stroke(), t.setLineDash([])) : (t.fillStyle = Pt(v.color, v.fillAlpha ?? 0.2), t.fillRect(p, g - 4, d, 8), t.strokeStyle = v.color, t.lineWidth = 1, t.strokeRect(p + 0.5, g - 4 + 0.5, d - 1, 7)), t.fillStyle = l.text, t.fillText(v.label, p + d + c, g);
   }
   t.restore();
 }
-function Kl(t, l, e, n, a, c, u, d) {
-  const f = Math.floor((c.x - De) / a), s = n.firstIdx + f;
+function Kl(t, l, e, n, a, f, u, d) {
+  const c = Math.floor((f.x - De) / a), s = n.firstIdx + c;
   if (s < 0 || s >= e.length) return;
   const i = e[s];
   if (!i) return;
@@ -1577,7 +1585,7 @@ function Kl(t, l, e, n, a, c, u, d) {
 function ql(t) {
   return !isFinite(t) || t <= 0 ? "0" : t >= 1e9 ? (t / 1e9).toFixed(2) + "B" : t >= 1e6 ? (t / 1e6).toFixed(2) + "M" : t >= 1e3 ? (t / 1e3).toFixed(1) + "K" : Math.round(t).toString();
 }
-function jl(t, l, e, n, a, c, u, d, f, s) {
+function jl(t, l, e, n, a, f, u, d, c, s) {
   if (!n.length) return;
   const i = n.length > 1 ? n[1].start - n[0].start : 6e4, x = Math.max(1, i * 0.5), M = Math.min(n.length, a.firstIdx + a.count), S = 9;
   let m = null;
@@ -1592,8 +1600,8 @@ function jl(t, l, e, n, a, c, u, d, f, s) {
       oe < 0 ? W = X + 1 : V = X - 1;
     }
     if (G < 0 || G < a.firstIdx || G >= M) continue;
-    const K = Be(G, a.firstIdx, d), de = Ce(B.price, c, u.priceY0, u.priceY1);
-    if (Math.abs(f.x - K) <= S && Math.abs(f.y - de) <= S) {
+    const K = Be(G, a.firstIdx, d), de = Ce(B.price, f, u.priceY0, u.priceY1);
+    if (Math.abs(c.x - K) <= S && Math.abs(c.y - de) <= S) {
       m = { m: B, x: K, y: de };
       break;
     }
@@ -1624,20 +1632,20 @@ function jl(t, l, e, n, a, c, u, d, f, s) {
 }
 function Zl(t, l, e, n, a) {
   if (e.length < 2) return;
-  const c = e[1].start - e[0].start, u = Jl(c);
+  const f = e[1].start - e[0].start, u = Jl(f);
   if (!u) return;
   t.save(), t.font = Fe, t.textBaseline = "top", t.textAlign = "right";
-  const d = 6, f = 3, s = t.measureText(u).width, i = n - ze - d, x = a - mt + 4;
-  t.fillStyle = l.accent, t.fillRect(i - s - d, x - f, s + d * 2, 14 + f * 2), t.fillStyle = l.bg.startsWith("rgba(0,0,0,0)") ? "#0d1520" : l.bg, t.fillText(u, i, x), t.restore();
+  const d = 6, c = 3, s = t.measureText(u).width, i = n - ze - d, x = a - mt + 4;
+  t.fillStyle = l.accent, t.fillRect(i - s - d, x - c, s + d * 2, 14 + c * 2), t.fillStyle = l.bg.startsWith("rgba(0,0,0,0)") ? "#0d1520" : l.bg, t.fillText(u, i, x), t.restore();
 }
 function Jl(t) {
   if (t <= 0 || !isFinite(t)) return "";
-  const l = 1e3, e = 60 * l, n = 60 * e, a = 24 * n, c = 7 * a;
-  return t >= c && t % c === 0 ? t / c + "W" : t >= a && t % a === 0 ? t / a + "D" : t >= n && t % n === 0 ? t / n + "h" : t >= e && t % e === 0 ? t / e + "m" : t >= l && t % l === 0 ? t / l + "s" : Math.round(t / e) + "m";
+  const l = 1e3, e = 60 * l, n = 60 * e, a = 24 * n, f = 7 * a;
+  return t >= f && t % f === 0 ? t / f + "W" : t >= a && t % a === 0 ? t / a + "D" : t >= n && t % n === 0 ? t / n + "h" : t >= e && t % e === 0 ? t / e + "m" : t >= l && t % l === 0 ? t / l + "s" : Math.round(t / e) + "m";
 }
-function Ql(t, l, e, n, a, c, u, d) {
+function Ql(t, l, e, n, a, f, u, d) {
   if (!n.length) return;
-  const f = n.length > 1 ? n[1].start - n[0].start : 6e4, s = Math.max(1, f * 0.5), i = Math.min(n.length, a.firstIdx + a.count), x = (S) => {
+  const c = n.length > 1 ? n[1].start - n[0].start : 6e4, s = Math.max(1, c * 0.5), i = Math.min(n.length, a.firstIdx + a.count), x = (S) => {
     let m = 0, h = n.length - 1;
     for (; m <= h; ) {
       const v = m + h >> 1, g = n[v].start - S;
@@ -1649,53 +1657,53 @@ function Ql(t, l, e, n, a, c, u, d) {
   for (const S of e) {
     const m = x(S.timestamp);
     if (m < 0 || m < a.firstIdx || m >= i) continue;
-    const h = Be(m, a.firstIdx, d), v = Ce(S.price, c, u.priceY0, u.priceY1);
+    const h = Be(m, a.firstIdx, d), v = Ce(S.price, f, u.priceY0, u.priceY1);
     if (v < u.priceY0 || v > u.priceY1) continue;
     const g = S.color ?? (S.kind === "entry" ? l.markerEntry : l.markerExit);
     t.fillStyle = g, t.strokeStyle = l.panelBgSolid, t.lineWidth = 1, t.beginPath(), S.kind === "entry" ? (t.moveTo(h, v - M), t.lineTo(h - M, v + M - 1), t.lineTo(h + M, v + M - 1)) : (t.moveTo(h, v + M), t.lineTo(h - M, v - M + 1), t.lineTo(h + M, v - M + 1)), t.closePath(), t.fill(), t.stroke();
   }
 }
-function en(t, l, e, n, a, c = !1) {
+function en(t, l, e, n, a, f = !1) {
   const u = e.max - e.min;
   if (u <= 0) return;
-  const d = n.priceY1 - n.priceY0, f = c ? Math.max(2, Math.min(4, Math.round(d / 36))) : 6, s = Xl(u, f), i = Math.ceil(e.min / s) * s, x = c ? Ht : ze;
-  t.font = c ? Yl : Fe, t.fillStyle = l.text, t.strokeStyle = l.gridline, t.textBaseline = "middle", t.textAlign = "left", t.lineWidth = 1, t.globalAlpha = 0.7;
+  const d = n.priceY1 - n.priceY0, c = f ? Math.max(2, Math.min(4, Math.round(d / 36))) : 6, s = Xl(u, c), i = Math.ceil(e.min / s) * s, x = f ? Ht : ze;
+  t.font = f ? Yl : Fe, t.fillStyle = l.text, t.strokeStyle = l.gridline, t.textBaseline = "middle", t.textAlign = "left", t.lineWidth = 1, t.globalAlpha = 0.7;
   for (let M = i; M <= e.max; M += s) {
     const S = Ce(M, e, n.priceY0, n.priceY1);
     S < n.priceY0 || S > n.priceY1 || (t.beginPath(), t.moveTo(De, Math.round(S) + 0.5), t.lineTo(a - x, Math.round(S) + 0.5), t.stroke(), t.fillText(Ae(M), a - x + 3, S));
   }
   t.globalAlpha = 1;
 }
-function tn(t, l, e, n, a, c) {
+function tn(t, l, e, n, a, f) {
   if (n.count <= 0 || !e.length) return;
   const d = Math.max(1, Math.floor(n.count / 6));
   t.font = Fe, t.fillStyle = l.text, t.textBaseline = "top", t.textAlign = "center", t.globalAlpha = 0.7;
-  const f = Math.min(e.length, n.firstIdx + n.count);
-  for (let s = n.firstIdx; s < f; s += d) {
+  const c = Math.min(e.length, n.firstIdx + n.count);
+  for (let s = n.firstIdx; s < c; s += d) {
     const i = e[s];
     if (!i) continue;
     const x = Be(s, n.firstIdx, a);
-    t.fillText(ht(i.start), x, c - mt + 4);
+    t.fillText(ht(i.start), x, f - mt + 4);
   }
   t.globalAlpha = 1;
 }
-function ln(t, l, e, n, a, c, u, d, f) {
+function ln(t, l, e, n, a, f, u, d, c) {
   const s = Math.floor((d.x - De) / u), i = Math.max(0, Math.min(e.length - 1, n.firstIdx + s)), x = e[i];
   if (!x) return;
   const M = Be(i, n.firstIdx, u);
-  t.save(), t.strokeStyle = l.accent, t.lineWidth = 1, t.setLineDash([3, 3]), t.globalAlpha = 0.6, t.beginPath(), t.moveTo(Math.round(M) + 0.5, c.priceY0), t.lineTo(Math.round(M) + 0.5, c.volumeY1 || c.priceY1), t.stroke();
-  const S = Math.max(c.priceY0, Math.min(c.priceY1, d.y));
-  t.beginPath(), t.moveTo(De, Math.round(S) + 0.5), t.lineTo(f - ze, Math.round(S) + 0.5), t.stroke(), t.setLineDash([]), t.globalAlpha = 1;
+  t.save(), t.strokeStyle = l.accent, t.lineWidth = 1, t.setLineDash([3, 3]), t.globalAlpha = 0.6, t.beginPath(), t.moveTo(Math.round(M) + 0.5, f.priceY0), t.lineTo(Math.round(M) + 0.5, f.volumeY1 || f.priceY1), t.stroke();
+  const S = Math.max(f.priceY0, Math.min(f.priceY1, d.y));
+  t.beginPath(), t.moveTo(De, Math.round(S) + 0.5), t.lineTo(c - ze, Math.round(S) + 0.5), t.stroke(), t.setLineDash([]), t.globalAlpha = 1;
   const m = a.max - a.min;
   if (m > 0) {
-    const g = a.max - (S - c.priceY0) / (c.priceY1 - c.priceY0) * m, p = Ae(g);
+    const g = a.max - (S - f.priceY0) / (f.priceY1 - f.priceY0) * m, p = Ae(g);
     t.font = Fe, t.textBaseline = "middle", t.textAlign = "left";
     const C = t.measureText(p).width, R = 4, w = 2;
-    t.fillStyle = l.accent, t.fillRect(f - ze + 2, S - 7 - w, C + R * 2, 14 + w * 2), t.fillStyle = l.bg.startsWith("rgba(0,0,0,0)") ? "#0d1520" : l.bg, t.fillText(p, f - ze + 2 + R, S);
+    t.fillStyle = l.accent, t.fillRect(c - ze + 2, S - 7 - w, C + R * 2, 14 + w * 2), t.fillStyle = l.bg.startsWith("rgba(0,0,0,0)") ? "#0d1520" : l.bg, t.fillText(p, c - ze + 2 + R, S);
   }
   t.font = Fe, t.textBaseline = "top", t.textAlign = "center";
   const h = ht(x.start), v = t.measureText(h).width;
-  t.fillStyle = l.accent, t.fillRect(M - v / 2 - 4, c.volumeY1 + 2, v + 8, 14), t.fillStyle = l.bg.startsWith("rgba(0,0,0,0)") ? "#0d1520" : l.bg, t.fillText(h, M, c.volumeY1 + 4), t.restore();
+  t.fillStyle = l.accent, t.fillRect(M - v / 2 - 4, f.volumeY1 + 2, v + 8, 14), t.fillStyle = l.bg.startsWith("rgba(0,0,0,0)") ? "#0d1520" : l.bg, t.fillText(h, M, f.volumeY1 + 4), t.restore();
 }
 const Ft = 0.25, Bt = 6, nn = `
   varying vec2 vUv;
@@ -1734,7 +1742,7 @@ const Ft = 0.25, Bt = 6, nn = `
 
     if (uVignette > 0.5) {
       vec2  vc   = uv - 0.5;
-      float vign = 1.0 - dot(vc, vc) * 1.5;
+      float vign = 1.0 - dot(vc, vc) * 0.6;   // softened falloff — see CathodeLog for rationale
       color.rgb  *= clamp(vign, 0.0, 1.0);
     }
 
@@ -1758,7 +1766,7 @@ const Ft = 0.25, Bt = 6, nn = `
     colors: {}
   },
   setup(t) {
-    const l = t, e = _(null), n = _(null), a = _(0), c = _(0), u = _(0), d = _(1), f = _(null), s = U(() => Math.max(1, l.slotW * d.value));
+    const l = t, e = _(null), n = _(null), a = _(0), f = _(0), u = _(0), d = _(1), c = _(null), s = U(() => Math.max(1, l.slotW * d.value));
     let i = null, x = !1, M, S, m, h, v;
     function g() {
       if (!(!n.value || !e.value)) {
@@ -1791,7 +1799,7 @@ const Ft = 0.25, Bt = 6, nn = `
     function p() {
       if (!e.value || !i && !x) return;
       const D = e.value.clientWidth, A = e.value.clientHeight;
-      !D || !A || !(v.width !== D || v.height !== A) || (v.width = D, v.height = A, a.value = D, c.value = A, i ? (h && (h.dispose(), h = new O.CanvasTexture(v), h.minFilter = O.LinearFilter, h.magFilter = O.LinearFilter, m && (m.uniforms.uTex.value = h)), i.setPixelRatio(window.devicePixelRatio || 1), i.setSize(D, A)) : n.value && (n.value.width = D, n.value.height = A, n.value.style.width = D + "px", n.value.style.height = A + "px"), C());
+      !D || !A || !(v.width !== D || v.height !== A) || (v.width = D, v.height = A, a.value = D, f.value = A, i ? (h && (h.dispose(), h = new O.CanvasTexture(v), h.minFilter = O.LinearFilter, h.magFilter = O.LinearFilter, m && (m.uniforms.uTex.value = h)), i.setPixelRatio(window.devicePixelRatio || 1), i.setSize(D, A)) : n.value && (n.value.width = D, n.value.height = A, n.value.style.width = D + "px", n.value.style.height = A + "px"), C());
     }
     function C() {
       if (!(v != null && v.width)) return;
@@ -1805,7 +1813,7 @@ const Ft = 0.25, Bt = 6, nn = `
           glow: !1,
           showVolume: l.showVolume,
           volumeFraction: l.volumeFraction,
-          hover: f.value,
+          hover: c.value,
           overlays: l.overlays,
           markers: l.markers,
           compact: l.compact,
@@ -1825,7 +1833,7 @@ const Ft = 0.25, Bt = 6, nn = `
         glow: l.glow,
         showVolume: l.showVolume,
         volumeFraction: l.volumeFraction,
-        hover: f.value,
+        hover: c.value,
         overlays: l.overlays,
         markers: l.markers,
         compact: l.compact,
@@ -1834,7 +1842,7 @@ const Ft = 0.25, Bt = 6, nn = `
     }
     H(() => l.theme, () => C()), H(() => l.curvature, () => C()), H(() => l.scanlines, () => C()), H(() => l.glow, () => C()), H(() => l.showVolume, () => C()), H(() => l.volumeFraction, () => C()), H(() => l.slotW, () => C()), H(() => l.candles, () => C(), { deep: !1 }), H(() => l.overlays, () => C(), { deep: !1 }), H(() => l.markers, () => C(), { deep: !1 }), H(() => l.compact, () => C()), H(() => l.colors, () => C(), { deep: !0 }), H(() => l.flat, () => {
       console.warn("[CathodeCandle] `flat` is mount-time only; remount the component (e.g. with :key) to switch pipelines.");
-    }), H(u, () => C()), H(d, () => C()), H(f, () => C()), H(s, () => C());
+    }), H(u, () => C()), H(d, () => C()), H(c, () => C()), H(s, () => C());
     let R = null, w = null, T = 0;
     const b = lt("cathodeResetTick", _(0));
     H(b, () => B());
@@ -1880,7 +1888,7 @@ const Ft = 0.25, Bt = 6, nn = `
     }
     let X = !1, oe = 0, we = 0;
     function q(D) {
-      D.button === 0 && (X = !0, oe = D.clientX, we = u.value, f.value = null);
+      D.button === 0 && (X = !0, oe = D.clientX, we = u.value, c.value = null);
     }
     function ke(D) {
       if (X) {
@@ -1896,13 +1904,13 @@ const Ft = 0.25, Bt = 6, nn = `
       if (X) return;
       const [A, $] = G(D);
       if (A < 0 || $ < 0) {
-        f.value = null;
+        c.value = null;
         return;
       }
-      f.value = { x: A, y: $ };
+      c.value = { x: A, y: $ };
     }
     function P() {
-      f.value = null;
+      c.value = null;
     }
     We(() => {
       document.addEventListener("mousemove", ke), document.addEventListener("mouseup", Ie), Te(() => {
@@ -1935,7 +1943,7 @@ const Ft = 0.25, Bt = 6, nn = `
       }, null, 544)
     ], 4));
   }
-}), Rn = /* @__PURE__ */ Ge(an, [["__scopeId", "data-v-4673e639"]]), gt = _(0), ft = 28, $e = 12;
+}), Rn = /* @__PURE__ */ Ge(an, [["__scopeId", "data-v-19358e05"]]), gt = _(0), ft = 28, $e = 12;
 let dt = 10, et = "cathode.layout", tt = !1;
 const se = _({});
 function rn(t, l = "cathode.layout") {
@@ -1983,13 +1991,13 @@ function vn(t, l, e) {
   se.value[t].w = Math.round(l), se.value[t].h = Math.round(e), Ye();
 }
 function Fn(t, l, e) {
-  const n = Math.ceil(Math.sqrt(e.length)), a = Math.ceil(e.length / n), c = Math.floor((t - $e * (n + 1)) / n), u = Math.floor((l - $e * (a + 1)) / a), d = {};
-  return e.forEach((f, s) => {
+  const n = Math.ceil(Math.sqrt(e.length)), a = Math.ceil(e.length / n), f = Math.floor((t - $e * (n + 1)) / n), u = Math.floor((l - $e * (a + 1)) / a), d = {};
+  return e.forEach((c, s) => {
     const i = s % n, x = Math.floor(s / n);
-    d[f] = {
-      x: $e + i * (c + $e),
+    d[c] = {
+      x: $e + i * (f + $e),
       y: $e + x * (u + $e),
-      w: c,
+      w: f,
       h: u,
       visible: !0,
       minimized: !1,
@@ -2027,7 +2035,7 @@ const mn = { class: "ws-toolbar" }, hn = {
     containerTitles: {}
   },
   setup(t) {
-    const l = t, { containers: e, load: n, reset: a, setVisible: c } = Ot(), u = _(null);
+    const l = t, { containers: e, load: n, reset: a, setVisible: f } = Ot(), u = _(null);
     Tt("cathodeWorkspace", u), Tt("cathodeResetTick", gt), We(() => {
       if (!u.value) return;
       const { clientWidth: v, clientHeight: g } = u.value, p = l.initialLayout ?? {};
@@ -2041,7 +2049,7 @@ const mn = { class: "ws-toolbar" }, hn = {
       const g = (p = u.value) == null ? void 0 : p.querySelector(`#cc-${v}`);
       g && g.classList.add("cc-focused");
     }
-    function f() {
+    function c() {
       !u.value || !l.initialLayout || a(l.initialLayout);
     }
     function s(v) {
@@ -2050,7 +2058,7 @@ const mn = { class: "ws-toolbar" }, hn = {
     }
     const i = _(!1), x = () => Object.entries(e.value).filter(([, v]) => !v.visible).map(([v]) => v);
     function M(v) {
-      c(v, !0), i.value = !1;
+      f(v, !0), i.value = !1;
     }
     function S(v) {
       if (!i.value) return;
@@ -2082,7 +2090,7 @@ const mn = { class: "ws-toolbar" }, hn = {
           key: 0,
           class: "ws-btn",
           title: "Reset all panels to default layout",
-          onClick: f
+          onClick: c
         }, " ↺ Reset Layout ")) : Se("", !0),
         g[1] || (g[1] = Z("div", { class: "ws-sep" }, null, -1)),
         Z("button", {
@@ -2122,7 +2130,7 @@ const mn = { class: "ws-toolbar" }, hn = {
     canvas: { type: Boolean }
   },
   setup(t) {
-    const l = t, { containers: e, bringToFront: n, setVisible: a, setMinimized: c, setMaximized: u, updatePos: d, updateSize: f } = Ot(), s = lt("cathodeWorkspace", _(null)), i = U(() => e.value[l.id]), x = U(() => {
+    const l = t, { containers: e, bringToFront: n, setVisible: a, setMinimized: f, setMaximized: u, updatePos: d, updateSize: c } = Ot(), s = lt("cathodeWorkspace", _(null)), i = U(() => e.value[l.id]), x = U(() => {
       const F = i.value, P = l.curvature ?? 0;
       if (!F) return {};
       const j = { "--curvature": P };
@@ -2164,7 +2172,7 @@ const mn = { class: "ws-toolbar" }, hn = {
     function W(F) {
       if (!p) return;
       const P = Math.max(Tn, w + (F.clientX - C)), j = Math.max(kn, T + (F.clientY - R));
-      f(l.id, P, j), b.value = `${Math.round(P)}×${Math.round(j)}`;
+      c(l.id, P, j), b.value = `${Math.round(P)}×${Math.round(j)}`;
     }
     function V() {
       p = !1, b.value = "", document.removeEventListener("mousemove", W), document.removeEventListener("mouseup", V), G.value++;
@@ -2214,7 +2222,7 @@ const mn = { class: "ws-toolbar" }, hn = {
       (F = K.value) == null || F.addEventListener("scroll", X, { passive: !0 }), Te(X);
     });
     function we() {
-      c(l.id, !i.value.minimized), Te(() => {
+      f(l.id, !i.value.minimized), Te(() => {
         G.value++;
       });
     }

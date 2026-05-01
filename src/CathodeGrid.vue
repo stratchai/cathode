@@ -390,7 +390,7 @@ const FRAG = `
 
     if (uVignette > 0.5) {
       vec2  vc   = uv - 0.5;
-      float vign = 1.0 - dot(vc, vc) * 1.5;
+      float vign = 1.0 - dot(vc, vc) * 0.6;   // softened falloff — see CathodeLog for rationale
       color.rgb  *= clamp(vign, 0.0, 1.0);
     }
 
