@@ -128,9 +128,18 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
 
     ctx.font      = `bold ${HDR_FONT_SIZE}px system-ui, -apple-system, sans-serif`
     ctx.fillStyle = hasFilter ? c.accent : c.textHeader
-    if (glow) { ctx.shadowBlur = 6; ctx.shadowColor = c.textHeader }
-    ctx.fillText(label, hx + 8, HEADER_H / 2)
-    ctx.shadowBlur = 0
+    if (glow) {
+      // Two-pass header glow — wide halation under tighter halo so the
+      // headers read as luminous through the barrel + scanline pipeline.
+      ctx.shadowColor = c.textHeader
+      ctx.shadowBlur  = 10
+      ctx.fillText(label, hx + 8, HEADER_H / 2)
+      ctx.shadowBlur  = 4
+      ctx.fillText(label, hx + 8, HEADER_H / 2)
+      ctx.shadowBlur  = 0
+    } else {
+      ctx.fillText(label, hx + 8, HEADER_H / 2)
+    }
 
     // Sort arrow
     if (isSort) {
@@ -152,7 +161,7 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
     ctx.restore()
 
     ctx.strokeStyle = c.border
-    ctx.lineWidth   = 1
+    ctx.lineWidth   = 1.5   // 1.5 survives bilinear sampling under barrel curve; 1 fades
     ctx.beginPath()
     ctx.moveTo(hx + col.width - 0.5, 0)
     ctx.lineTo(hx + col.width - 0.5, HEADER_H)
@@ -163,7 +172,7 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
 
   // Header bottom border
   ctx.strokeStyle = c.border
-  ctx.lineWidth   = 1
+  ctx.lineWidth   = 1.5   // 1.5 survives bilinear sampling under barrel curve; 1 fades
   ctx.beginPath()
   ctx.moveTo(0, HEADER_H - 0.5)
   ctx.lineTo(W, HEADER_H - 0.5)
@@ -202,7 +211,7 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
 
     // Row bottom border
     ctx.strokeStyle = c.border
-    ctx.lineWidth   = 1
+    ctx.lineWidth   = 1.5   // 1.5 survives bilinear sampling under barrel curve; 1 fades
     ctx.beginPath()
     ctx.moveTo(0, ry + rowHeight - 0.5)
     ctx.lineTo(W, ry + rowHeight - 0.5)
@@ -229,16 +238,26 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
       ctx.font         = `${FONT_SIZE}px system-ui, -apple-system, sans-serif`
       ctx.fillStyle    = textColor
       ctx.textBaseline = 'middle'
-      if (glow) { ctx.shadowBlur = 4; ctx.shadowColor = textColor }
 
-      if (align === 'right') {
-        ctx.textAlign = 'right'
-        ctx.fillText(text, cx + col.width - 8, ry + rowHeight / 2)
+      const xPos = align === 'right' ? cx + col.width - 8 : cx + 8
+      ctx.textAlign = align === 'right' ? 'right' : 'left'
+      const yPos = ry + rowHeight / 2
+
+      if (glow) {
+        // Three-pass cell-text glow matching CanvasLog. Compounds bloom so
+        // each cell value reads as lit-from-within phosphor rather than
+        // just tinted. Fixes "glow not visible on grid" feedback.
+        ctx.shadowColor = textColor
+        ctx.shadowBlur  = 12
+        ctx.fillText(text, xPos, yPos)
+        ctx.shadowBlur  = 6
+        ctx.fillText(text, xPos, yPos)
+        ctx.shadowBlur  = 2
+        ctx.fillText(text, xPos, yPos)
+        ctx.shadowBlur  = 0
       } else {
-        ctx.textAlign = 'left'
-        ctx.fillText(text, cx + 8, ry + rowHeight / 2)
+        ctx.fillText(text, xPos, yPos)
       }
-      ctx.shadowBlur = 0
       ctx.restore()
 
       // Selected cell border — drawn OVER text
@@ -250,7 +269,7 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
 
       // Cell right border
       ctx.strokeStyle = c.border
-      ctx.lineWidth   = 1
+      ctx.lineWidth   = 1.5   // 1.5 survives bilinear sampling under barrel curve; 1 fades
       ctx.beginPath()
       ctx.moveTo(cx + col.width - 0.5, ry)
       ctx.lineTo(cx + col.width - 0.5, ry + rowHeight)
@@ -267,7 +286,7 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
     const pinnedY = H - pinnedH
 
     ctx.strokeStyle = c.border
-    ctx.lineWidth   = 1
+    ctx.lineWidth   = 1.5   // 1.5 survives bilinear sampling under barrel curve; 1 fades
     ctx.beginPath()
     ctx.moveTo(0, pinnedY - 0.5)
     ctx.lineTo(W, pinnedY - 0.5)
@@ -311,7 +330,7 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
         ctx.restore()
 
         ctx.strokeStyle = c.border
-        ctx.lineWidth   = 1
+        ctx.lineWidth   = 1.5   // 1.5 survives bilinear sampling under barrel curve; 1 fades
         ctx.beginPath()
         ctx.moveTo(cx + col.width - 0.5, ry)
         ctx.lineTo(cx + col.width - 0.5, ry + rowHeight)
@@ -321,7 +340,7 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
       }
 
       ctx.strokeStyle = c.border
-      ctx.lineWidth   = 1
+      ctx.lineWidth   = 1.5   // 1.5 survives bilinear sampling under barrel curve; 1 fades
       ctx.beginPath()
       ctx.moveTo(0, ry + rowHeight - 0.5)
       ctx.lineTo(W, ry + rowHeight - 0.5)

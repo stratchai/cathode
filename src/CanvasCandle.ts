@@ -438,7 +438,10 @@ export function drawCandle(canvas: HTMLCanvasElement, opts: DrawCandleOpts): voi
     const wickColor = bullish ? c.wickBull   : c.wickBear
     const bodyColor = bullish ? c.candleBull : c.candleBear
 
-    if (opts.glow) { ctx.shadowBlur = 4; ctx.shadowColor = bodyColor }
+    // Stronger phosphor glow on candles. Single 4px shadow was almost
+    // invisible under the brighter shader pipeline; bumping to 10px
+    // gives bodies a clear lit-from-within halo. Wicks share the glow.
+    if (opts.glow) { ctx.shadowBlur = 10; ctx.shadowColor = bodyColor }
 
     // Wick — single vertical line from high to low
     ctx.strokeStyle = wickColor
@@ -448,16 +451,21 @@ export function drawCandle(canvas: HTMLCanvasElement, opts: DrawCandleOpts): voi
     ctx.lineTo(Math.round(x) + 0.5, yL)
     ctx.stroke()
 
-    // Body — rect from yOpen to yClose, centred on x
+    // Body — rect from yOpen to yClose, centred on x.
+    // Two-pass body bloom so the candle's halo compounds — the second
+    // tighter pass keeps the body shape sharp while the first wide pass
+    // bleeds colour into the surrounding pixels.
     ctx.fillStyle = bodyColor
     const bodyTop    = Math.min(yO, yC)
     const bodyHeight = Math.max(1, Math.abs(yC - yO))
-    ctx.fillRect(
-      Math.round(x - bodyW / 2),
-      Math.round(bodyTop),
-      bodyW,
-      Math.round(bodyHeight),
-    )
+    const bodyX      = Math.round(x - bodyW / 2)
+    const bodyY      = Math.round(bodyTop)
+    const bodyH      = Math.round(bodyHeight)
+    ctx.fillRect(bodyX, bodyY, bodyW, bodyH)
+    if (opts.glow) {
+      ctx.shadowBlur = 4
+      ctx.fillRect(bodyX, bodyY, bodyW, bodyH)
+    }
 
     ctx.shadowBlur = 0
 
