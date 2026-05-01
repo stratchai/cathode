@@ -1224,8 +1224,7 @@ const El = `
         if (w.key === "Enter") {
           w.preventDefault();
           const T = d.value;
-          if (!T.trim()) return;
-          y(T), s.value = -1, d.value = "", a("submit", T);
+          T.trim() && y(T), s.value = -1, d.value = "", a("submit", T);
           return;
         }
         if (w.key === "ArrowUp") {
@@ -1313,7 +1312,7 @@ const El = `
       ])
     ], 512));
   }
-}), En = /* @__PURE__ */ Ge(Al, [["__scopeId", "data-v-734788fe"]]), Qe = {
+}), En = /* @__PURE__ */ Ge(Al, [["__scopeId", "data-v-90cf2990"]]), Qe = {
   none: {
     // bg fully transparent so the parent (glass CathodeContainer) shows
     // through. Same propagation pattern as CanvasGrid / CanvasLog `none`.

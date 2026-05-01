@@ -264,8 +264,12 @@ function onTerminalSubmit(cmd: string) {
     { level: 'info', text: `→ ${cmd}` },
   ]
 
-  // Tiny built-in vocabulary — purely demo. Real consumers route to a backend.
+  // Empty submit — real terminals just drop the prompt line and move on.
+  // No response, no busy state.
   const trimmed = cmd.trim()
+  if (!trimmed) return
+
+  // Tiny built-in vocabulary — purely demo. Real consumers route to a backend.
   let level: LogEntry['level'] = 'success'
   let response: string
 

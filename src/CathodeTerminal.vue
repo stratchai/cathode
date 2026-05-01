@@ -91,8 +91,12 @@ function onKey(e: KeyboardEvent) {
   if (e.key === 'Enter') {
     e.preventDefault()
     const cmd = draft.value
-    if (!cmd.trim()) return
-    pushHistory(cmd)
+    // Always emit, even on empty — real terminals drop a fresh prompt
+    // line when you press Enter alone. Consumer decides what to do
+    // with the empty command (most just echo the prompt and move on).
+    // Skip pushing empties to history though — recalling an empty
+    // command via ↑ is useless.
+    if (cmd.trim()) pushHistory(cmd)
     historyIdx.value = -1
     draft.value      = ''
     emit('submit', cmd)
