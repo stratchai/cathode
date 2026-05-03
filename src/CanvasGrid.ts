@@ -83,6 +83,45 @@ export interface DrawGridOpts {
   selectionAnchorCol?: number
   formatCell:   (col: ResolvedCol, row: any) => string
   getCellStyle: (col: ResolvedCol, row: any) => CSSProperties
+
+  /**
+   * Optional aggregate row drawn sticky to the bottom — one cell per column
+   * with the value already computed (sum/avg/etc) by the consumer. Pass
+   * `null` (or omit) to skip the aggregate row entirely.
+   */
+  aggregateRow?: Record<string, string> | null
+}
+
+/** Height (px) of the aggregate row when present. */
+export const AGG_ROW_H = 28
+
+// ── Aggregator helpers ─────────────────────────────────────────────────────────
+
+export type AggFunc = 'sum' | 'avg' | 'min' | 'max' | 'count' | ((v: any[]) => any)
+
+/**
+ * Apply an aggregator to a column's values across the supplied rows. Skips
+ * null / undefined / non-numeric values for sum/avg/min/max; count only
+ * counts rows where the value is defined.
+ */
+export function aggregate(
+  values: any[],
+  fn: AggFunc,
+): any {
+  if (typeof fn === 'function') return fn(values)
+
+  // Filter out null/undefined for everything; sum/avg/min/max also need numeric.
+  const defined = values.filter(v => v !== null && v !== undefined && v !== '')
+  if (fn === 'count') return defined.length
+  const nums = defined.map(v => Number(v)).filter(v => !Number.isNaN(v))
+  if (nums.length === 0) return null
+
+  switch (fn) {
+    case 'sum': return nums.reduce((a, b) => a + b, 0)
+    case 'avg': return nums.reduce((a, b) => a + b, 0) / nums.length
+    case 'min': return Math.min(...nums)
+    case 'max': return Math.max(...nums)
+  }
 }
 
 // ── Main draw ──────────────────────────────────────────────────────────────────
@@ -108,7 +147,8 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
   ctx.clip()
 
   const pinnedH  = pinnedRows.length * rowHeight
-  const bodyH    = H - HEADER_H - pinnedH
+  const aggH     = opts.aggregateRow ? AGG_ROW_H : 0
+  const bodyH    = H - HEADER_H - pinnedH - aggH
 
   // ── Header ───────────────────────────────────────────────────────────────────
   ctx.fillStyle = c.headerBg
@@ -336,8 +376,9 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
   ctx.restore()
 
   // ── Pinned rows ───────────────────────────────────────────────────────────────
+  // Sit above the aggregate row when one is present, otherwise at the bottom.
   if (pinnedRows.length > 0) {
-    const pinnedY = H - pinnedH
+    const pinnedY = H - pinnedH - aggH
 
     ctx.strokeStyle = c.border
     ctx.lineWidth   = 1.5   // 1.5 survives bilinear sampling under barrel curve; 1 fades
@@ -399,6 +440,69 @@ export function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void {
       ctx.moveTo(0, ry + rowHeight - 0.5)
       ctx.lineTo(W, ry + rowHeight - 0.5)
       ctx.stroke()
+    }
+  }
+
+  // ── Aggregate row ─────────────────────────────────────────────────────────────
+  if (opts.aggregateRow) {
+    const aggY = H - aggH
+
+    // Background — accent-tinted so the agg row reads as a "totals" band
+    // distinct from the alternating-row body and the pinned rows.
+    ctx.fillStyle = hexToRgba(c.accent, 0.10)
+    ctx.fillRect(0, aggY, W, aggH)
+
+    // Top border separator
+    ctx.strokeStyle = c.accent
+    ctx.lineWidth   = 1.5
+    ctx.beginPath()
+    ctx.moveTo(0, aggY - 0.5)
+    ctx.lineTo(W, aggY - 0.5)
+    ctx.stroke()
+
+    let cx = -scrollX
+    for (let ci = 0; ci < cols.length; ci++) {
+      const col = cols[ci]
+      if (cx + col.width <= 0) { cx += col.width; continue }
+      if (cx >= W) break
+
+      const rawStyle = opts.getCellStyle(col, opts.aggregateRow)
+      const align    = (rawStyle.textAlign as string) ?? 'left'
+      const text     = opts.aggregateRow[col.colId] ?? ''
+
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(cx + 1, aggY, col.width - 2, aggH)
+      ctx.clip()
+
+      ctx.font         = `bold ${FONT_SIZE}px system-ui, -apple-system, sans-serif`
+      ctx.fillStyle    = c.accent
+      ctx.textBaseline = 'middle'
+
+      if (glow) {
+        ctx.shadowColor = c.accent
+        ctx.shadowBlur  = 8
+      }
+
+      if (align === 'right') {
+        ctx.textAlign = 'right'
+        ctx.fillText(text, cx + col.width - 8, aggY + aggH / 2)
+      } else {
+        ctx.textAlign = 'left'
+        ctx.fillText(text, cx + 8, aggY + aggH / 2)
+      }
+      ctx.shadowBlur = 0
+      ctx.restore()
+
+      // Column dividers (subtle)
+      ctx.strokeStyle = c.border
+      ctx.lineWidth   = 1
+      ctx.beginPath()
+      ctx.moveTo(cx + col.width - 0.5, aggY)
+      ctx.lineTo(cx + col.width - 0.5, aggY + aggH)
+      ctx.stroke()
+
+      cx += col.width
     }
   }
 
@@ -485,7 +589,8 @@ export function hitTest(
   canvasH:     number,
   pinnedCount: number,
   scrollX:     number,
-): { area: 'header' | 'body' | 'pinned' | 'none', colIdx: number, rowIdx: number } {
+  hasAggRow:   boolean = false,
+): { area: 'header' | 'body' | 'pinned' | 'agg' | 'none', colIdx: number, rowIdx: number } {
   const contentX = cx + scrollX   // map canvas x → content x
   let colIdx = -1
   let x = 0
@@ -496,9 +601,14 @@ export function hitTest(
 
   if (cy < HEADER_H) return { area: 'header', colIdx, rowIdx: -1 }
 
+  const aggH = hasAggRow ? AGG_ROW_H : 0
+  if (aggH > 0 && cy >= canvasH - aggH) {
+    return { area: 'agg', colIdx, rowIdx: -1 }
+  }
+
   const pinnedH = pinnedCount * rowHeight
-  if (pinnedH > 0 && cy >= canvasH - pinnedH) {
-    const rowIdx = Math.floor((cy - (canvasH - pinnedH)) / rowHeight)
+  if (pinnedH > 0 && cy >= canvasH - pinnedH - aggH) {
+    const rowIdx = Math.floor((cy - (canvasH - pinnedH - aggH)) / rowHeight)
     return { area: 'pinned', colIdx, rowIdx }
   }
 

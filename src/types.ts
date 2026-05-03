@@ -62,6 +62,27 @@ export interface ColDef<T = any> {
 
   /** Custom sort comparator — (aValue, bValue) => -1|0|1 */
   comparator?: (a: any, b: any) => number
+
+  /**
+   * Aggregator applied to this column's values across all currently-filtered
+   * rows. Result renders in a sticky aggregate row at the bottom of the grid
+   * and recomputes whenever the filter / sort / quick-filter change.
+   *
+   *   - 'sum'   — total of numeric values
+   *   - 'avg'   — arithmetic mean of numeric values
+   *   - 'min'   — smallest value (numeric or string)
+   *   - 'max'   — largest value (numeric or string)
+   *   - 'count' — number of rows contributing a non-null value
+   *
+   * Or pass a custom function — receives the raw values from each row's
+   * `valueGetter` / `field` lookup and returns whatever should render.
+   */
+  aggFunc?:
+    | 'sum' | 'avg' | 'min' | 'max' | 'count'
+    | ((values: any[]) => any)
+
+  /** Format the aggregate result for display. Falls back to String(v). */
+  aggValueFormatter?: (value: any) => string
 }
 
 // ── Column state (for persistence) ───────────────────────────────────────────

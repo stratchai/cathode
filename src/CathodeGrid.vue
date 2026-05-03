@@ -9,6 +9,7 @@ import {
   drawGrid, hitTest,
   isOnFilterIcon, isOnResizeHandle, colLeft,
   HEADER_H, THEME_COLORS, screenToCanvas,
+  aggregate, AGG_ROW_H,
 } from './CanvasGrid'
 import {
   LENS_FRAG_UNIFORMS, LENS_FRAG_FN, LENS_FRAG_RING,
@@ -257,6 +258,37 @@ const filteredRows = computed<any[]>(() => {
   }
 
   return rows
+})
+
+/**
+ * Aggregate row — one entry per column declaring `aggFunc`. Recomputes
+ * automatically when filteredRows changes (filter / sort / quickFilter).
+ * Returns null when no column requests aggregation, so the renderer can
+ * skip drawing the aggregate band entirely.
+ */
+const aggregateRow = computed<Record<string, string> | null>(() => {
+  const aggCols = resolvedCols.value.filter(c => c.colDef.aggFunc != null)
+  if (aggCols.length === 0) return null
+
+  const rows = filteredRows.value
+  const out: Record<string, string> = {}
+  for (const col of aggCols) {
+    const values = rows.map(r => getCellValue(r, col))
+    const result = aggregate(values, col.colDef.aggFunc!)
+    if (result === null || result === undefined) {
+      out[col.colId] = ''
+      continue
+    }
+    out[col.colId] = col.colDef.aggValueFormatter
+      ? col.colDef.aggValueFormatter(result)
+      : String(result)
+  }
+  // Mark first aggregated column with a Σ label only if there's no value
+  // there already — purely a "this row is totals" cue.
+  const firstAggColId = aggCols[0].colId
+  if (out[firstAggColId] === '') out[firstAggColId] = 'Σ'
+
+  return out
 })
 
 watch(filteredRows, () => { scrollY.value = 0; selectedCell.value = null })
@@ -586,6 +618,7 @@ function redraw() {
     selectionAnchorCol: selectionAnchor.value?.col ?? -1,
     formatCell,
     getCellStyle,
+    aggregateRow: aggregateRow.value,
   })
 
   texture.needsUpdate = true
@@ -661,6 +694,7 @@ function onCanvasMouseMove(e: MouseEvent) {
     cx, cy, displayCols.value,
     filteredRows.value.length, props.rowHeight,
     scrollY.value, offCanvas.height, localPinned.value.length, scrollX.value,
+    aggregateRow.value !== null,
   )
 
   hoveredRow.value = hit.area === 'body' ? hit.rowIdx : -1
@@ -726,6 +760,7 @@ function onCanvasClick(e: MouseEvent) {
     cx, cy, displayCols.value,
     filteredRows.value.length, props.rowHeight,
     scrollY.value, offCanvas.height, localPinned.value.length, scrollX.value,
+    aggregateRow.value !== null,
   )
 
   // ── Header click — sort or filter ──────────────────────────────────────────
