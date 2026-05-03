@@ -757,7 +757,7 @@ seedLogEntries()
             :theme="theme"
             :curvature="curvature"
             :scanlines="scanlines"
-            :glow="false"
+            :glow="glow"
             :magnify="magnify"
             :pagination="true"
             :pagination-page-size="50"
