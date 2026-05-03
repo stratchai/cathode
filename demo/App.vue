@@ -129,6 +129,7 @@ const defaultColDef: ColDef = { resizable: true, sortable: true }
 const gridApi    = ref<GridApi | null>(null)
 const curvature  = ref(25)
 const scanlines  = ref(true)
+const magnify    = ref(false)
 const glow       = ref(true)
 const quickText  = ref('')
 const statusFilt = ref<'all' | 'open' | 'closed'>('all')
@@ -206,18 +207,39 @@ const wsLayout = buildWsLayout(window.innerWidth, window.innerHeight - 88)
 
 // ── Workspace panel data ──────────────────────────────────────────────────────
 // Signal feed → CathodeLog entries. Map each event to a level-tinted line.
-const feedLogEntries: LogEntry[] = [
-  { level: 'info',    text: '14:02:18 ▲  XLM     momentum breakout     ENTRY' },
-  { level: 'success', text: '14:18:42 ✓  HIGH    ema adx               EXIT  +2.76%' },
-  { level: 'error',   text: '15:01:55 ✕  ZEC     hh hl trend follow    EXIT  -4.00%' },
-  { level: 'info',    text: '15:34:09 ▲  SOL     keltner breakout      ENTRY' },
-  { level: 'success', text: '16:12:30 ✓  AVAX    donchian breakout     EXIT  +1.12%' },
-  { level: 'debug',   text: '16:14:01 ··  scanner pass — 142 products evaluated, 3 entries fired' },
-  { level: 'warn',    text: '16:42:18 ⚠  rate-limit cooldown 8s on coinbase market_trades' },
-  { level: 'info',    text: '17:05:11 ▲  ADA     atr trend             ENTRY' },
-  { level: 'success', text: '17:22:48 ✓  ETH     macd cross daily      EXIT  +0.83%' },
-  { level: 'debug',   text: '17:30:00 ··  heartbeat: 23 agents alive, 4 with open positions' },
+// Generated to give the workspace's Log panel enough content to actually
+// scroll and explore (was 10 entries — too few to demo the lens / pan / arrows).
+const FEED_TEMPLATES: Array<{ level: LogEntry['level']; text: string }> = [
+  { level: 'info',    text: '▲  XLM     momentum breakout     ENTRY  size 2,134.55  notional $3,140' },
+  { level: 'success', text: '✓  HIGH    ema adx               EXIT   +2.76%   pnl +$86.75' },
+  { level: 'error',   text: '✕  ZEC     hh hl trend follow    EXIT   -4.00%   pnl -$120.00' },
+  { level: 'info',    text: '▲  SOL     keltner breakout      ENTRY  size 1,090     notional $4,580' },
+  { level: 'success', text: '✓  AVAX    donchian breakout     EXIT   +1.12%   pnl +$23.40' },
+  { level: 'debug',   text: '··  scanner pass — 142 products evaluated, 3 entries fired, 11 in cooldown' },
+  { level: 'warn',    text: '⚠  rate-limit cooldown 8s on coinbase market_trades — backing off, retry in 8s' },
+  { level: 'info',    text: '▲  ADA     atr trend             ENTRY  size 4,209.18  notional $2,740' },
+  { level: 'success', text: '✓  ETH     macd cross daily      EXIT   +0.83%   pnl +$41.90' },
+  { level: 'debug',   text: '··  heartbeat: 23 agents alive, 4 with open positions, 0 stalled' },
+  { level: 'info',    text: '▲  HBAR    rsi oversold bounce   ENTRY  size 18,420   notional $1,985' },
+  { level: 'warn',    text: '⚠  spread guard: skipping FOO-USD — bid/ask 0.81% > 0.50% threshold' },
+  { level: 'success', text: '✓  PENGU   profit floor flat     EXIT   +2.53%   pnl +$248.90' },
+  { level: 'debug',   text: '··  regime classified FLAT (btc 0.6%, hysteresis sticky 6/8 windows)' },
+  { level: 'info',    text: '▲  LINK    bb squeeze            ENTRY  size 287       notional $4,210' },
+  { level: 'error',   text: '✕  L3      macd cross daily      EXIT   -13.44%  pnl -$1,830  flagged for watchlist' },
+  { level: 'success', text: '✓  KO      bull flag breakout    EXIT   +1.94%   pnl +$189.55' },
+  { level: 'info',    text: '▲  TROLL   trend tf basic        ENTRY  size 16,750   notional $750' },
+  { level: 'debug',   text: '··  spec reload: macd_cross_daily — scan_whitelist now ["ETH-USD","SOL-USD"] (was wide)' },
+  { level: 'success', text: '✓  TROLL   trend tf basic        EXIT   +3.15%   pnl +$23.70   PROFIT_FLOOR_FLAT' },
 ]
+const feedLogEntries: LogEntry[] = (() => {
+  const out: LogEntry[] = []
+  const base = Date.now() - 1000 * 60 * 75
+  for (let i = 0; i < 140; i++) {
+    const tpl = FEED_TEMPLATES[i % FEED_TEMPLATES.length]
+    out.push({ ts: base + i * 32_000, text: tpl.text, level: tpl.level })
+  }
+  return out
+})()
 
 // ── Log tab — CathodeLog demo entries ─────────────────────────────────────────
 const LOG_TEMPLATES: Array<{ level: LogEntry['level']; text: string }> = [
@@ -572,10 +594,12 @@ if (typeof window !== 'undefined') {
 }
 function seedLogEntries() {
   const out: LogEntry[] = []
-  const base = Date.now() - 1000 * 60 * 30
-  for (let i = 0; i < 80; i++) {
+  // Wider time window + 4× the volume so there's enough content to scroll
+  // and explore the magnify lens without running out of rows.
+  const base = Date.now() - 1000 * 60 * 90
+  for (let i = 0; i < 320; i++) {
     const tpl = LOG_TEMPLATES[i % LOG_TEMPLATES.length]
-    out.push({ ts: base + i * 22_000, text: tpl.text, level: tpl.level })
+    out.push({ ts: base + i * 16_000, text: tpl.text, level: tpl.level })
   }
   logEntries.value = out
 }
@@ -622,6 +646,10 @@ seedLogEntries()
       <input type="range" min="0" max="45" step="1" v-model.number="curvature" style="width:110px" />
       <label><input type="checkbox" v-model="scanlines" /> Scanlines</label>
       <label><input type="checkbox" v-model="glow" />      Glow</label>
+      <label v-if="activeTab !== 'terminal'">
+        <input type="checkbox" v-model="magnify" data-testid="cf-magnify" />
+        Magnify
+      </label>
       <label v-if="activeTab === 'candle'">
         <input type="checkbox" v-model="showIndicators" data-testid="cf-show-indicators" />
         Indicators
@@ -659,6 +687,7 @@ seedLogEntries()
         :curvature="curvature"
         :scanlines="scanlines"
         :glow="glow"
+        :magnify="magnify"
         :pagination="true"
         :pagination-page-size="50"
         @grid-ready="onGridReady"
@@ -673,6 +702,8 @@ seedLogEntries()
         :curvature="curvature"
         :scanlines="scanlines"
         :glow="glow"
+        :magnify="magnify"
+        :word-wrap="false"
       />
     </div>
 
@@ -689,6 +720,7 @@ seedLogEntries()
         :glow="glow"
         :flat="flat"
         :compact="compact"
+        :magnify="magnify"
       />
     </div>
 
@@ -726,6 +758,7 @@ seedLogEntries()
             :curvature="curvature"
             :scanlines="scanlines"
             :glow="false"
+            :magnify="magnify"
             :pagination="true"
             :pagination-page-size="50"
             @grid-ready="onGridReady"
@@ -745,19 +778,21 @@ seedLogEntries()
             :curvature="curvature"
             :scanlines="scanlines"
             :glow="glow"
+            :magnify="magnify"
           />
         </template>
       </CathodeContainer>
 
-      <!-- LOG — CathodeLog (signal feed as level-tinted lines) -->
+      <!-- LOG — CathodeLog (same dataset as the standalone Log tab) -->
       <CathodeContainer id="log" title="Log" :curvature="curvature" canvas>
         <CathodeLog
-          :entries="feedLogEntries"
+          :entries="logEntries"
           :theme="theme"
           :curvature="curvature"
           :scanlines="scanlines"
           :glow="glow"
-          :show-timestamps="false"
+          :magnify="magnify"
+          :word-wrap="false"
         />
       </CathodeContainer>
 

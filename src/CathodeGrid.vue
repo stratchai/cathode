@@ -8,8 +8,13 @@ import type { ColDef, ColState, GridApi, ResolvedCol } from './types'
 import {
   drawGrid, hitTest,
   isOnFilterIcon, isOnResizeHandle, colLeft,
-  HEADER_H, THEME_COLORS,
+  HEADER_H, THEME_COLORS, screenToCanvas,
 } from './CanvasGrid'
+import {
+  LENS_FRAG_UNIFORMS, LENS_FRAG_FN, LENS_FRAG_RING,
+  createLensUniforms, writeLensUniforms, eventToLensUV,
+  LENS_INACTIVE, type MouseLensUV,
+} from './lensShader'
 import './cathode.css'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -34,6 +39,13 @@ const props = withDefaults(defineProps<{
   curvature?: number
   scanlines?: boolean
   glow?:      boolean
+  /**
+   * Lens-on-hover mode. When true, mousing over the grid magnifies a circular
+   * region under the cursor at ~2.5× with smoothstep falloff to 1× at the edge.
+   * Hit-testing uses raw pixel coordinates (not the magnified visual position),
+   * which matches the existing grid's behaviour under barrel curvature.
+   */
+  magnify?:   boolean
 }>(), {
   rowData:            () => [],
   rowHeight:          28,
@@ -41,6 +53,7 @@ const props = withDefaults(defineProps<{
   curvature:          25,
   scanlines:          true,
   glow:               true,
+  magnify:            false,
   pagination:         true,
   paginationPageSize: 200,   // effectively unlimited; auto-fit drives page size
 })
@@ -84,6 +97,10 @@ const selectedCell  = ref<{ row: number, col: number } | null>(null)
 // collapses the selection by writing both anchor and active to the same cell.
 const selectionAnchor = ref<{ row: number, col: number } | null>(null)
 const activeFilter  = ref<string | null>(null)
+
+// Lens-on-hover state — mouse position in shader UV space (Three.js
+// convention: y=1 at top). LENS_INACTIVE = (-999,-999) = lens not drawn.
+const mouseLensUV: MouseLensUV = { ...LENS_INACTIVE }
 
 // Filter popup
 const filterPopupPos   = ref({ x: 0, y: HEADER_H })
@@ -369,6 +386,7 @@ const FRAG = `
   uniform float     uScanlines;  // 1.0 = on
   uniform float     uVignette;   // 1.0 = on  (off for paper theme)
   uniform vec3      uBezel;      // bezel / outside-screen colour
+  ${LENS_FRAG_UNIFORMS}
 
   varying vec2 vUv;
 
@@ -379,8 +397,11 @@ const FRAG = `
     return uv + d;
   }
 
+  ${LENS_FRAG_FN}
+
   void main() {
-    vec2 uv = barrel(vUv);
+    vec2 lensUV = applyLens(vUv);
+    vec2 uv     = barrel(lensUV);
 
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
       gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
@@ -398,6 +419,8 @@ const FRAG = `
       float vign = 1.0 - dot(vc, vc) * 0.6;   // softened falloff — see CathodeLog for rationale
       color.rgb  *= clamp(vign, 0.0, 1.0);
     }
+
+    ${LENS_FRAG_RING}
 
     gl_FragColor = color;
   }
@@ -441,6 +464,7 @@ function initThree() {
       uScanlines: { value: 1.0 },
       uVignette:  { value: 1.0 },
       uBezel:     { value: new THREE.Color(0x000000) },
+      ...createLensUniforms(),
     },
     vertexShader:   VERT,
     fragmentShader: FRAG,
@@ -541,6 +565,8 @@ function redraw() {
   material.uniforms.uVignette.value  = isPaper ? 0.0 : 1.0
   ;(material.uniforms.uBezel.value as THREE.Color).set(themeColors.bg)
 
+  writeLensUniforms(material, props.magnify, mouseLensUV, offCanvas.width, offCanvas.height)
+
   drawGrid(offCanvas, {
     cols:        displayCols.value,
     rows:        filteredRows.value,
@@ -571,8 +597,18 @@ function redraw() {
 function canvasCoords(e: MouseEvent): [number, number] {
   if (!canvasEl.value) return [-1, -1]
   const rect = canvasEl.value.getBoundingClientRect()
-  // No UV remapping in shader — screen pixel maps 1:1 to canvas pixel
-  return [e.clientX - rect.left, e.clientY - rect.top]
+  const sx   = e.clientX - rect.left
+  const sy   = e.clientY - rect.top
+  // Apply the same barrel transform the shader uses, in reverse, so
+  // hit-testing lands on the canvas cell the user actually SEES under
+  // their cursor. Without this, high curvature compresses edge columns
+  // inward visually but hit-tests still expect raw pixel coordinates,
+  // so resize handles and filter icons drift away from where they're drawn.
+  const W        = canvasEl.value.width  || rect.width
+  const H        = canvasEl.value.height || rect.height
+  const strength = (props.curvature / 45) * 0.55
+  const [cx, cy] = screenToCanvas(sx, sy, W, H, strength)
+  return cx < 0 ? [-1, -1] : [cx, cy]
 }
 
 // ── Mouse wheel ───────────────────────────────────────────────────────────────
@@ -610,6 +646,14 @@ function onCanvasWheel(e: WheelEvent) {
 
 function onCanvasMouseMove(e: MouseEvent) {
   if (resizeActive) return
+
+  // Lens tracking — update mouse UV when lens is enabled.
+  if (props.magnify && canvasEl.value) {
+    const uv = eventToLensUV(e, canvasEl.value)
+    mouseLensUV.x = uv.x
+    mouseLensUV.y = uv.y
+  }
+
   const [cx, cy] = canvasCoords(e)
   if (cx < 0) { hoveredRow.value = -1; redraw(); return }
 
@@ -639,6 +683,8 @@ function onCanvasMouseMove(e: MouseEvent) {
 
 function onCanvasMouseLeave() {
   hoveredRow.value = -1
+  mouseLensUV.x = LENS_INACTIVE.x
+  mouseLensUV.y = LENS_INACTIVE.y
   redraw()
 }
 
@@ -1012,6 +1058,10 @@ watch(() => props.theme,     () => redraw())
 watch(() => props.curvature, () => nextTick(sizeToContainer))
 watch(() => props.scanlines, () => redraw())
 watch(() => props.glow,      () => redraw())
+watch(() => props.magnify,   (on) => {
+  if (!on) { mouseLensUV.x = LENS_INACTIVE.x; mouseLensUV.y = LENS_INACTIVE.y }
+  redraw()
+})
 
 // Emit cell-selected when selection changes via keyboard
 watch(selectedCell, (sc) => {

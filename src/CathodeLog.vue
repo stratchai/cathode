@@ -10,6 +10,11 @@ import {
   LINE_HEIGHT, PADDING_X, PADDING_Y, FONT,
   type LogEntry, type VisualLine,
 } from './CanvasLog'
+import {
+  LENS_FRAG_UNIFORMS, LENS_FRAG_FN, LENS_FRAG_RING,
+  createLensUniforms, writeLensUniforms, eventToLensUV,
+  LENS_INACTIVE, type MouseLensUV,
+} from './lensShader'
 import './cathode.css'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -32,6 +37,12 @@ const props = withDefaults(defineProps<{
   autoscroll?:    boolean
   /** Ring-buffer cap on rendered entries — older entries scroll off. 0 = no cap. */
   maxLines?:      number
+  /**
+   * Lens-on-hover mode. When true, mousing over the log magnifies a
+   * circular region under the cursor at ~1.6× with a flat field and a
+   * subtle glass curl at the rim.
+   */
+  magnify?:       boolean
 }>(), {
   theme:          'none',
   curvature:      25,
@@ -41,12 +52,17 @@ const props = withDefaults(defineProps<{
   wordWrap:       true,
   autoscroll:     true,
   maxLines:       0,
+  magnify:        false,
 })
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 
 const wrapEl   = ref<HTMLDivElement | null>(null)
 const canvasEl = ref<HTMLCanvasElement | null>(null)
+
+// ── Lens state (mouse position in shader UV; (-999,-999) = inactive) ─────────
+
+const mouseLensUV: MouseLensUV = { ...LENS_INACTIVE }
 
 // ── Canvas dimensions (set by sizeToContainer) ────────────────────────────────
 
@@ -59,6 +75,13 @@ const scrollY     = ref(0)
 const hoveredLine = ref(-1)
 /** True when the user has scrolled away from the bottom — autoscroll pauses. */
 const stuckToBottom = ref(true)
+
+// Selection state — Excel-style range. anchor = where selection started,
+// active = where it ends. Both -1 = no selection. Range is the inclusive
+// span between min(anchor, active) and max(anchor, active). Plain click
+// or arrow collapses anchor and active to the same line.
+const selectionAnchor = ref(-1)
+const selectionActive = ref(-1)
 
 // ── Visual lines (wrapped) — recomputed when entries / width / theme change ───
 
@@ -118,9 +141,22 @@ function recomputeVisualLines() {
 const contentH = computed(() => totalContentHeight(visualLines.value.length))
 const maxScrollY = computed(() => Math.max(0, contentH.value - canvasH.value))
 
+/** Widest visual line in pixels — used to clamp horizontal scroll. */
+const contentW = computed(() => {
+  let max = 0
+  for (const l of visualLines.value) if (l.widthPx > max) max = l.widthPx
+  // tsWidth + text + gutter on the right so the trailing edge isn't flush
+  return PADDING_X * 2 + tsWidth.value + max
+})
+const maxScrollX = computed(() => Math.max(0, contentW.value - canvasW.value))
+const scrollX    = ref(0)
+
 watch(maxScrollY, () => {
   if (stuckToBottom.value) scrollY.value = maxScrollY.value
   else scrollY.value = Math.min(scrollY.value, maxScrollY.value)
+})
+watch(maxScrollX, () => {
+  scrollX.value = Math.min(scrollX.value, maxScrollX.value)
 })
 
 // Recompute visual lines when entries or relevant props change
@@ -153,6 +189,7 @@ const FRAG = `
   uniform float     uStrength;
   uniform float     uScanlines;
   uniform float     uVignette;
+  ${LENS_FRAG_UNIFORMS}
 
   varying vec2 vUv;
 
@@ -163,8 +200,11 @@ const FRAG = `
     return uv + d;
   }
 
+  ${LENS_FRAG_FN}
+
   void main() {
-    vec2 uv = barrel(vUv);
+    vec2 lensUV = applyLens(vUv);
+    vec2 uv     = barrel(lensUV);
 
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
       gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
@@ -185,6 +225,8 @@ const FRAG = `
       float vign = 1.0 - dot(vc, vc) * 0.6;
       color.rgb  *= clamp(vign, 0.0, 1.0);
     }
+
+    ${LENS_FRAG_RING}
 
     gl_FragColor = color;
   }
@@ -225,6 +267,7 @@ function initThree() {
       uStrength:  { value: 0.0 },
       uScanlines: { value: 1.0 },
       uVignette:  { value: 1.0 },
+      ...createLensUniforms(),
     },
     vertexShader:   VERT,
     fragmentShader: FRAG,
@@ -292,11 +335,14 @@ function redraw() {
     drawLog(offCanvas, {
       visualLines:    visualLines.value,
       scrollY:        scrollY.value,
+      scrollX:        scrollX.value,
       theme:          props.theme,
       glow:           false,
       showTimestamps: props.showTimestamps,
       timestampWidth: tsWidth.value,
       hoveredLine:    hoveredLine.value,
+      selectionStart: Math.min(selectionAnchor.value, selectionActive.value),
+      selectionEnd:   Math.max(selectionAnchor.value, selectionActive.value),
     })
     const ctx2d = canvasEl.value.getContext('2d')
     if (ctx2d) ctx2d.drawImage(offCanvas, 0, 0)
@@ -310,15 +356,19 @@ function redraw() {
   material.uniforms.uStrength.value  = (props.curvature / 45) * 0.55
   material.uniforms.uScanlines.value = (props.scanlines && !isPaper) ? 1.0 : 0.0
   material.uniforms.uVignette.value  = isPaper ? 0.0 : 1.0
+  writeLensUniforms(material, props.magnify, mouseLensUV, offCanvas.width, offCanvas.height)
 
   drawLog(offCanvas, {
     visualLines:    visualLines.value,
     scrollY:        scrollY.value,
+    scrollX:        scrollX.value,
     theme:          props.theme,
     glow:           props.glow,
     showTimestamps: props.showTimestamps,
     timestampWidth: tsWidth.value,
     hoveredLine:    hoveredLine.value,
+    selectionStart: Math.min(selectionAnchor.value, selectionActive.value),
+    selectionEnd:   Math.max(selectionAnchor.value, selectionActive.value),
   })
 
   texture.needsUpdate = true
@@ -336,8 +386,14 @@ watch(() => props.theme,     () => redraw())
 watch(() => props.curvature, () => redraw())
 watch(() => props.scanlines, () => redraw())
 watch(() => props.glow,      () => redraw())
+watch(() => props.magnify,   (on) => {
+  if (!on) { mouseLensUV.x = LENS_INACTIVE.x; mouseLensUV.y = LENS_INACTIVE.y }
+  redraw()
+})
 watch(scrollY,               () => redraw())
+watch(scrollX,               () => redraw())
 watch(hoveredLine,           () => redraw())
+watch([selectionAnchor, selectionActive], () => redraw())
 
 // ── Mouse / wheel interaction ─────────────────────────────────────────────────
 
@@ -353,27 +409,47 @@ function setScroll(y: number) {
   stuckToBottom.value = scrollY.value >= maxScrollY.value - 4
 }
 
-function onCanvasWheel(e: WheelEvent) {
-  setScroll(scrollY.value + e.deltaY)
+function setScrollX(x: number) {
+  scrollX.value = Math.max(0, Math.min(maxScrollX.value, x))
 }
 
-// Pan-to-scroll
+function onCanvasWheel(e: WheelEvent) {
+  // Shift+wheel = horizontal scroll (matches Grid). Trackpad horizontal
+  // gesture (deltaX) routes to scrollX too.
+  if (e.shiftKey) {
+    setScrollX(scrollX.value + e.deltaY)
+  } else if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+    setScrollX(scrollX.value + e.deltaX)
+  } else {
+    setScroll(scrollY.value + e.deltaY)
+  }
+}
+
+// Pan-to-scroll — drag in either direction pans both axes (diagonal works).
 let panActive       = false
+let panStartX       = 0
 let panStartY       = 0
+let panStartScrollX = 0
 let panStartScrollY = 0
 let panMoved        = false
 
 function onCanvasMouseDown(e: MouseEvent) {
   panActive       = true
   panMoved        = false
+  panStartX       = e.clientX
   panStartY       = e.clientY
+  panStartScrollX = scrollX.value
   panStartScrollY = scrollY.value
+  // Grab keyboard focus so arrow keys / page keys / Cmd+C work on the canvas.
+  if (wrapEl.value) wrapEl.value.focus()
 }
 
 function onGlobalMouseMove(e: MouseEvent) {
   if (panActive) {
+    const dx = panStartX - e.clientX
     const dy = panStartY - e.clientY
-    if (Math.abs(dy) > 4) panMoved = true
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) panMoved = true
+    setScrollX(panStartScrollX + dx)
     setScroll(panStartScrollY + dy)
   }
 }
@@ -385,7 +461,147 @@ function onGlobalMouseUp() {
   }
 }
 
+/**
+ * Map a click to a visualLines index. Returns -1 when click is outside the
+ * rendered range (e.g. blank space below the last entry).
+ */
+function clickedLine(e: MouseEvent): number {
+  const [, cy] = canvasCoords(e)
+  if (cy < 0) return -1
+  return lineHitTest(cy, scrollY.value, visualLines.value.length)
+}
+
+function onCanvasClick(e: MouseEvent) {
+  // Drag-pan ended at this position — don't treat as a selection click.
+  if (panMoved) { panMoved = false; return }
+
+  const li = clickedLine(e)
+  if (li < 0) {
+    // Click in blank area collapses selection.
+    selectionAnchor.value = -1
+    selectionActive.value = -1
+    return
+  }
+
+  if (e.shiftKey && selectionAnchor.value >= 0) {
+    selectionActive.value = li
+  } else {
+    selectionAnchor.value = li
+    selectionActive.value = li
+  }
+}
+
+// ── Keyboard navigation ────────────────────────────────────────────────────
+// Mirrors the Grid's keyboard model: arrows move the highlight one line at
+// a time and auto-scroll to keep it visible; ←/→ scroll horizontally when
+// content is wider than the canvas; Page/Home/End jump farther.
+
+/**
+ * Move the selection anchor + active by `delta` lines, scrolling the
+ * selected line into view. If `extend` is true the anchor stays put and
+ * only `active` moves (shift-arrow range extension); otherwise both
+ * anchor and active move together (plain arrow collapses selection).
+ */
+function moveSelection(delta: number, extend: boolean) {
+  const total = visualLines.value.length
+  if (total === 0) return
+  const startActive = selectionActive.value < 0 ? 0 : selectionActive.value
+  let next = Math.max(0, Math.min(total - 1, startActive + delta))
+  selectionActive.value = next
+  if (!extend || selectionAnchor.value < 0) selectionAnchor.value = next
+  // Mirror to hovered so hover highlight tracks keyboard focus too.
+  hoveredLine.value = next
+  const lineTop    = PADDING_Y + next * LINE_HEIGHT
+  const lineBottom = lineTop + LINE_HEIGHT
+  if (lineTop < scrollY.value) {
+    setScroll(lineTop)
+  } else if (lineBottom > scrollY.value + canvasH.value) {
+    setScroll(lineBottom - canvasH.value)
+  }
+}
+
+/**
+ * Build a plain-text clipboard payload for the current selection: each
+ * entry's timestamp (when shown) + text, joined by newlines. Wrapped
+ * fragments belonging to the same entry are flattened back into one line
+ * so a multi-fragment "long" entry copies as a single line, like the user
+ * sees in their source log file.
+ */
+function selectionAsText(): string {
+  const start = Math.min(selectionAnchor.value, selectionActive.value)
+  const end   = Math.max(selectionAnchor.value, selectionActive.value)
+  if (start < 0) return ''
+  const lines = visualLines.value
+  const seenEntries = new Set<number>()
+  const out: string[] = []
+  for (let i = start; i <= end && i < lines.length; i++) {
+    const l = lines[i]
+    if (seenEntries.has(l.entryIdx)) continue
+    seenEntries.add(l.entryIdx)
+    // Reconstruct the entry — concatenate all fragments belonging to entryIdx
+    let text = ''
+    for (let j = 0; j < lines.length; j++) {
+      if (lines[j].entryIdx === l.entryIdx) text += (text && !lines[j].isFirstFrag ? ' ' : '') + lines[j].text
+    }
+    out.push(l.timestamp ? `${l.timestamp}  ${text}` : text)
+  }
+  return out.join('\n')
+}
+
+async function copySelection() {
+  const text = selectionAsText()
+  if (!text) return
+  try {
+    await navigator.clipboard.writeText(text)
+  } catch {
+    // Older browsers / non-secure contexts: fall back to a textarea + execCommand.
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.style.position = 'fixed'
+    ta.style.opacity  = '0'
+    document.body.appendChild(ta)
+    ta.select()
+    try { document.execCommand('copy') } catch { /* give up silently */ }
+    document.body.removeChild(ta)
+  }
+}
+
+function onKeyDown(e: KeyboardEvent) {
+  // Cmd/Ctrl+C — copy current selection
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'c' || e.key === 'C')) {
+    if (selectionAnchor.value >= 0) {
+      e.preventDefault()
+      void copySelection()
+    }
+    return
+  }
+  // Cmd/Ctrl+A — select all visible entries
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')) {
+    e.preventDefault()
+    selectionAnchor.value = 0
+    selectionActive.value = visualLines.value.length - 1
+    return
+  }
+  switch (e.key) {
+    case 'ArrowDown':  e.preventDefault(); moveSelection(1, e.shiftKey);  break
+    case 'ArrowUp':    e.preventDefault(); moveSelection(-1, e.shiftKey); break
+    case 'ArrowRight': e.preventDefault(); setScrollX(scrollX.value + LINE_HEIGHT * 2); break
+    case 'ArrowLeft':  e.preventDefault(); setScrollX(scrollX.value - LINE_HEIGHT * 2); break
+    case 'PageDown':   e.preventDefault(); setScroll(scrollY.value + canvasH.value); break
+    case 'PageUp':     e.preventDefault(); setScroll(scrollY.value - canvasH.value); break
+    case 'Home':       e.preventDefault(); setScroll(0); setScrollX(0); break
+    case 'End':        e.preventDefault(); setScroll(maxScrollY.value); break
+    case 'Escape':     selectionAnchor.value = -1; selectionActive.value = -1; break
+  }
+}
+
 function onCanvasMouseMove(e: MouseEvent) {
+  if (props.magnify && canvasEl.value) {
+    const uv = eventToLensUV(e, canvasEl.value)
+    mouseLensUV.x = uv.x
+    mouseLensUV.y = uv.y
+    redraw()
+  }
   const [, cy] = canvasCoords(e)
   if (cy < 0) { hoveredLine.value = -1; return }
   hoveredLine.value = lineHitTest(cy, scrollY.value, visualLines.value.length)
@@ -393,6 +609,9 @@ function onCanvasMouseMove(e: MouseEvent) {
 
 function onCanvasMouseLeave() {
   hoveredLine.value = -1
+  mouseLensUV.x = LENS_INACTIVE.x
+  mouseLensUV.y = LENS_INACTIVE.y
+  redraw()
 }
 
 // ── Public API: jump to bottom ────────────────────────────────────────────────
@@ -481,7 +700,13 @@ const wrapStyle = computed<CSSProperties>(() => ({
 </script>
 
 <template>
-  <div ref="wrapEl" class="cathode-log-wrap" :style="wrapStyle">
+  <div
+    ref="wrapEl"
+    class="cathode-log-wrap"
+    :style="wrapStyle"
+    tabindex="0"
+    @keydown="onKeyDown"
+  >
     <canvas
       ref="canvasEl"
       class="cathode-log-canvas"
@@ -489,6 +714,7 @@ const wrapStyle = computed<CSSProperties>(() => ({
       @mousemove="onCanvasMouseMove"
       @mouseleave="onCanvasMouseLeave"
       @mousedown="onCanvasMouseDown"
+      @click="onCanvasClick"
     />
   </div>
 </template>
@@ -501,6 +727,10 @@ const wrapStyle = computed<CSSProperties>(() => ({
   width: 100%;
   height: 100%;
   overflow: hidden;
+  /* tabindex=0 makes the wrap focusable so arrow keys route here; suppress
+     the browser's default focus outline — the CRT bezel already signals
+     "this surface is active." */
+  outline: none;
 }
 
 .cathode-log-canvas {

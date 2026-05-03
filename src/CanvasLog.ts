@@ -32,6 +32,7 @@ export interface VisualLine {
   level:       LogLevel
   timestamp:   string    // empty on continuation lines
   isFirstFrag: boolean   // true on the first wrapped fragment of an entry
+  widthPx:     number    // measured text width — drives horizontal scroll bound
 }
 
 // ── Theme palettes ────────────────────────────────────────────────────────────
@@ -48,6 +49,8 @@ export interface LogColors {
   levelDebug:   string
   levelSuccess: string
   timestamp:    string
+  /** Optional override for the selection-row tint. Default if missing. */
+  selection?:   string
 }
 
 export const LOG_THEME_COLORS: Record<string, LogColors> = {
@@ -254,6 +257,7 @@ export function buildVisualLines(opts: BuildVisualLinesOpts): VisualLine[] {
         level:       lvl,
         timestamp:   f === 0 ? ts : '',
         isFirstFrag: f === 0,
+        widthPx:     ctx.measureText(frags[f]).width,
       })
     }
   }
@@ -266,11 +270,18 @@ export function buildVisualLines(opts: BuildVisualLinesOpts): VisualLine[] {
 export interface DrawLogOpts {
   visualLines:    VisualLine[]
   scrollY:        number       // px offset from top of content
+  scrollX:        number       // px offset; non-zero only when wordWrap is off
   theme:          string
   glow:           boolean
   showTimestamps: boolean
   timestampWidth: number       // px reserved on the left for the timestamp column
   hoveredLine:    number       // index in visualLines, -1 = none
+  /**
+   * Inclusive selection range in visualLines indices. Both -1 = no selection.
+   * Selected lines render with a stronger highlight (brand-tinted) than hover.
+   */
+  selectionStart: number
+  selectionEnd:   number
 }
 
 export function drawLog(canvas: HTMLCanvasElement, opts: DrawLogOpts): void {
@@ -295,8 +306,12 @@ export function drawLog(canvas: HTMLCanvasElement, opts: DrawLogOpts): void {
   ctx.textBaseline = 'middle'
 
   const lines     = opts.visualLines
-  const tsX       = PADDING_X
-  const textX     = opts.showTimestamps ? PADDING_X + opts.timestampWidth : PADDING_X
+  // Horizontal scroll: shift the entire content row by -scrollX. Timestamps
+  // and body text both move so the timestamp column stays aligned with the
+  // text it labels (otherwise wide entries with long text would have their
+  // timestamps still pinned at the left edge).
+  const tsX       = PADDING_X - opts.scrollX
+  const textX     = (opts.showTimestamps ? PADDING_X + opts.timestampWidth : PADDING_X) - opts.scrollX
   const startLine = Math.max(0, Math.floor((opts.scrollY - PADDING_Y) / LINE_HEIGHT))
   const endLine   = Math.min(lines.length, Math.ceil((opts.scrollY + H - PADDING_Y) / LINE_HEIGHT) + 1)
 
@@ -311,6 +326,14 @@ export function drawLog(canvas: HTMLCanvasElement, opts: DrawLogOpts): void {
       let run = 1
       while (li + run < endLine && lines[li + run].entryIdx === line.entryIdx) run++
       ctx.fillRect(0, y - LINE_HEIGHT / 2, W, LINE_HEIGHT * run)
+    }
+
+    // Selection highlight (drawn before hover so hover can layer on top
+    // of an already-selected line). Selection uses a stronger fill so it
+    // reads as "picked" rather than just "passing under cursor."
+    if (opts.selectionStart >= 0 && li >= opts.selectionStart && li <= opts.selectionEnd) {
+      ctx.fillStyle = c.selection ?? 'rgba(110, 231, 167, 0.16)'
+      ctx.fillRect(0, y - LINE_HEIGHT / 2, W, LINE_HEIGHT)
     }
 
     // Hover highlight

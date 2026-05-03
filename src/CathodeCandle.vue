@@ -8,6 +8,11 @@ import {
   drawCandle, CANDLE_THEME_COLORS, DEFAULT_VOLUME_FRACTION,
   type OHLCVCandle, type PriceOverlay, type TradeMarker, type CandleColors,
 } from './CanvasCandle'
+import {
+  LENS_FRAG_UNIFORMS, LENS_FRAG_FN, LENS_FRAG_RING,
+  createLensUniforms, writeLensUniforms, eventToLensUV,
+  LENS_INACTIVE, type MouseLensUV,
+} from './lensShader'
 import './cathode.css'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -49,6 +54,13 @@ const props = withDefaults(defineProps<{
    * having to register a new theme upstream.
    */
   colors?:        Partial<CandleColors>
+  /**
+   * Lens-on-hover mode. When true, mousing over the chart magnifies a
+   * circular region under the cursor at ~1.6× with a flat field and a
+   * subtle glass curl at the rim. Independent of the mouse-wheel zoom
+   * (which is chart-internal and rescales the candle slot width).
+   */
+  magnify?:       boolean
 }>(), {
   theme:          'none',
   curvature:      25,
@@ -59,12 +71,17 @@ const props = withDefaults(defineProps<{
   slotW:          8,
   flat:           false,
   compact:        false,
+  magnify:        false,
 })
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 
 const wrapEl   = ref<HTMLDivElement | null>(null)
 const canvasEl = ref<HTMLCanvasElement | null>(null)
+
+// ── Lens state (mouse position in shader UV; (-999,-999) = inactive) ─────────
+
+const mouseLensUV: MouseLensUV = { ...LENS_INACTIVE }
 
 // ── Canvas dimensions (set by sizeToContainer) ────────────────────────────────
 
@@ -111,6 +128,7 @@ const FRAG = `
   uniform float     uStrength;
   uniform float     uScanlines;
   uniform float     uVignette;
+  ${LENS_FRAG_UNIFORMS}
 
   varying vec2 vUv;
 
@@ -121,8 +139,11 @@ const FRAG = `
     return uv + d;
   }
 
+  ${LENS_FRAG_FN}
+
   void main() {
-    vec2 uv = barrel(vUv);
+    vec2 lensUV = applyLens(vUv);
+    vec2 uv     = barrel(lensUV);
 
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
       gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
@@ -140,6 +161,8 @@ const FRAG = `
       float vign = 1.0 - dot(vc, vc) * 0.6;   // softened falloff — see CathodeLog for rationale
       color.rgb  *= clamp(vign, 0.0, 1.0);
     }
+
+    ${LENS_FRAG_RING}
 
     gl_FragColor = color;
   }
@@ -189,6 +212,7 @@ function initThree() {
       uStrength:  { value: 0.0 },
       uScanlines: { value: 1.0 },
       uVignette:  { value: 1.0 },
+      ...createLensUniforms(),
     },
     vertexShader:   VERT,
     fragmentShader: FRAG,
@@ -278,6 +302,7 @@ function redraw() {
   material.uniforms.uStrength.value  = (props.curvature / 45) * 0.55
   material.uniforms.uScanlines.value = (props.scanlines && !isPaper) ? 1.0 : 0.0
   material.uniforms.uVignette.value  = isPaper ? 0.0 : 1.0
+  writeLensUniforms(material, props.magnify, mouseLensUV, offCanvas.width, offCanvas.height)
 
   drawCandle(offCanvas, {
     candles:        props.candles,
@@ -311,6 +336,10 @@ watch(() => props.candles,        () => redraw(), { deep: false })
 watch(() => props.overlays,       () => redraw(), { deep: false })
 watch(() => props.markers,        () => redraw(), { deep: false })
 watch(() => props.compact,        () => redraw())
+watch(() => props.magnify,        (on) => {
+  if (!on) { mouseLensUV.x = LENS_INACTIVE.x; mouseLensUV.y = LENS_INACTIVE.y }
+  redraw()
+})
 watch(() => props.colors,         () => redraw(), { deep: true })
 
 // `flat` is a mount-time decision — once a canvas element has been used
@@ -418,6 +447,31 @@ function onCanvasMouseDown(e: MouseEvent) {
   panStartScrollX = scrollX.value
   // Hide crosshair while panning — it's distracting and the readout would lag
   hover.value = null
+  // Grab focus so arrow / shift-arrow keys route to the chart.
+  if (wrapEl.value) wrapEl.value.focus()
+}
+
+// ── Keyboard navigation ────────────────────────────────────────────────────
+// ←/→ pan one candle (Shift = ten); ↑/↓ zoom in/out (same path as wheel).
+function applyZoom(direction: 1 | -1) {
+  const factor = Math.exp(direction * 0.18)
+  zoomLevel.value = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomLevel.value * factor))
+  scrollX.value   = clampScroll(scrollX.value)
+}
+
+function onKeyDown(e: KeyboardEvent) {
+  // Pan step in candle-slots. Default of 3 (vs 1) makes each key press
+  // visibly move the chart even after zoom-in; shift jumps a screenful.
+  const sw   = effectiveSlotW.value
+  const step = e.shiftKey ? 20 : 3
+  switch (e.key) {
+    case 'ArrowLeft':  e.preventDefault(); scrollX.value = clampScroll(scrollX.value + sw * step); break
+    case 'ArrowRight': e.preventDefault(); scrollX.value = clampScroll(scrollX.value - sw * step); break
+    case 'ArrowUp':    e.preventDefault(); applyZoom(1); break
+    case 'ArrowDown':  e.preventDefault(); applyZoom(-1); break
+    case 'Home':       e.preventDefault(); scrollX.value = clampScroll(Number.MAX_SAFE_INTEGER); break
+    case 'End':        e.preventDefault(); scrollX.value = 0; break
+  }
 }
 
 function onGlobalMouseMove(e: MouseEvent) {
@@ -437,6 +491,12 @@ function onGlobalMouseUp() {
 }
 
 function onCanvasMouseMove(e: MouseEvent) {
+  if (props.magnify && canvasEl.value) {
+    const uv = eventToLensUV(e, canvasEl.value)
+    mouseLensUV.x = uv.x
+    mouseLensUV.y = uv.y
+    redraw()
+  }
   if (panActive) return
   const [cx, cy] = canvasCoords(e)
   if (cx < 0 || cy < 0) { hover.value = null; return }
@@ -445,6 +505,9 @@ function onCanvasMouseMove(e: MouseEvent) {
 
 function onCanvasMouseLeave() {
   hover.value = null
+  mouseLensUV.x = LENS_INACTIVE.x
+  mouseLensUV.y = LENS_INACTIVE.y
+  redraw()
 }
 
 onMounted(() => {
@@ -493,7 +556,13 @@ const wrapStyle = computed<CSSProperties>(() => ({
 </script>
 
 <template>
-  <div ref="wrapEl" class="cathode-candle-wrap" :style="wrapStyle">
+  <div
+    ref="wrapEl"
+    class="cathode-candle-wrap"
+    :style="wrapStyle"
+    tabindex="0"
+    @keydown="onKeyDown"
+  >
     <canvas
       ref="canvasEl"
       class="cathode-candle-canvas"
@@ -513,6 +582,9 @@ const wrapStyle = computed<CSSProperties>(() => ({
   width: 100%;
   height: 100%;
   overflow: hidden;
+  /* Focusable for keyboard nav (arrow keys); suppress the default outline
+     since the CRT bezel signals the active surface. */
+  outline: none;
 }
 .cathode-candle-canvas {
   /* Renderer.setSize() owns inline width/height. */
