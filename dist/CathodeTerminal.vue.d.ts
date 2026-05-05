@@ -24,6 +24,12 @@ type __VLS_Props = {
     busy?: boolean;
     /** Max number of submitted commands kept for ↑/↓ history. */
     historyLimit?: number;
+    /**
+     * Hover-lens magnify. Forwarded straight to the underlying CathodeLog
+     * since the terminal renders through it — no separate implementation
+     * needed. Same circle, same shader pipeline.
+     */
+    magnify?: boolean;
 };
 declare function focus(): void;
 declare const _default: import("vue").DefineComponent<__VLS_Props, {
@@ -39,6 +45,7 @@ declare const _default: import("vue").DefineComponent<__VLS_Props, {
     theme: "none" | "phosphor" | "amber" | "paper";
     curvature: number;
     scanlines: boolean;
+    magnify: boolean;
     disabled: boolean;
     autoscroll: boolean;
     maxLines: number;

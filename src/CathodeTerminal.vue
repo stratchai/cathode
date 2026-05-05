@@ -48,6 +48,12 @@ const props = withDefaults(defineProps<{
   busy?:          boolean
   /** Max number of submitted commands kept for ↑/↓ history. */
   historyLimit?:  number
+  /**
+   * Hover-lens magnify. Forwarded straight to the underlying CathodeLog
+   * since the terminal renders through it — no separate implementation
+   * needed. Same circle, same shader pipeline.
+   */
+  magnify?:       boolean
 }>(), {
   theme:          'none',
   curvature:      25,
@@ -61,6 +67,7 @@ const props = withDefaults(defineProps<{
   disabled:       false,
   busy:           false,
   historyLimit:   100,
+  magnify:        false,
 })
 
 const emit = defineEmits<{
@@ -208,6 +215,7 @@ onUnmounted(() => {
       :curvature="curvature"
       :scanlines="scanlines"
       :glow="glow"
+      :magnify="magnify"
       :show-timestamps="showTimestamps"
       :format-ts="formatTs"
       :word-wrap="wordWrap"

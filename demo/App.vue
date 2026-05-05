@@ -666,7 +666,7 @@ seedLogEntries()
       <input type="range" min="0" max="45" step="1" v-model.number="curvature" style="width:110px" />
       <label><input type="checkbox" v-model="scanlines" /> Scanlines</label>
       <label><input type="checkbox" v-model="glow" />      Glow</label>
-      <label v-if="activeTab !== 'terminal'">
+      <label>
         <input type="checkbox" v-model="magnify" data-testid="cf-magnify" />
         Magnify
       </label>
@@ -780,6 +780,7 @@ seedLogEntries()
         :curvature="curvature"
         :scanlines="scanlines"
         :glow="glow"
+        :magnify="magnify"
         :busy="terminalBusy"
         prompt="→ "
         placeholder="type a command (try: help, echo …, time)"
@@ -876,6 +877,7 @@ seedLogEntries()
           :curvature="curvature"
           :scanlines="scanlines"
           :glow="glow"
+          :magnify="magnify"
           :busy="terminalBusy"
           prompt="→ "
           @submit="onTerminalSubmit"

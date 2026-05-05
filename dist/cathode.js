@@ -1509,7 +1509,8 @@ const Jl = `
     prompt: { default: "→ " },
     disabled: { type: Boolean, default: !1 },
     busy: { type: Boolean, default: !1 },
-    historyLimit: { default: 100 }
+    historyLimit: { default: 100 },
+    magnify: { type: Boolean, default: !1 }
   },
   emits: ["submit"],
   setup(t, { expose: l, emit: e }) {
@@ -1587,12 +1588,13 @@ const Jl = `
         curvature: t.curvature,
         scanlines: t.scanlines,
         glow: t.glow,
+        magnify: t.magnify,
         "show-timestamps": t.showTimestamps,
         "format-ts": t.formatTs,
         "word-wrap": t.wordWrap,
         autoscroll: t.autoscroll,
         "max-lines": t.maxLines
-      }, null, 8, ["entries", "theme", "curvature", "scanlines", "glow", "show-timestamps", "format-ts", "word-wrap", "autoscroll", "max-lines"]),
+      }, null, 8, ["entries", "theme", "curvature", "scanlines", "glow", "magnify", "show-timestamps", "format-ts", "word-wrap", "autoscroll", "max-lines"]),
       ol(oe("input", {
         ref_key: "inputEl",
         ref: f,
@@ -1611,7 +1613,7 @@ const Jl = `
       ])
     ], 512));
   }
-}), eo = /* @__PURE__ */ et(ln, [["__scopeId", "data-v-90cf2990"]]), wt = {
+}), eo = /* @__PURE__ */ et(ln, [["__scopeId", "data-v-a2b39934"]]), wt = {
   none: {
     // bg fully transparent so the parent (glass CathodeContainer) shows
     // through. Same propagation pattern as CanvasGrid / CanvasLog `none`.
