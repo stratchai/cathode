@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import CathodeGrid      from '../src/CathodeGrid.vue'
 import CathodeLog       from '../src/CathodeLog.vue'
 import CathodeCandle     from '../src/CathodeCandle.vue'
@@ -145,6 +145,28 @@ const magnify    = ref(false)
 // boot/loading placeholder applied across the whole UI on demand. Real
 // consumers gate the loader on actual readiness; this just exposes it.
 const showLoaders = ref(false)
+
+// ── Mobile-mode breakpoint ───────────────────────────────────────────────────
+// Below 720px: hide the Workspace tab (its 4-canvas layout stresses mobile
+// browsers' WebGL-context cap, plus drag-resize panels don't translate to
+// touch without explicit handlers — separate scope), wrap the toolbar onto
+// multiple rows, and tighten .tab-content padding so each canvas gets the
+// max usable pixels.
+const MOBILE_BREAKPOINT_PX = 720
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1200)
+const isMobile    = computed(() => windowWidth.value < MOBILE_BREAKPOINT_PX)
+
+function onWindowResize() { windowWidth.value = window.innerWidth }
+onMounted(()   => window.addEventListener('resize', onWindowResize))
+onUnmounted(() => window.removeEventListener('resize', onWindowResize))
+
+// If we're in mobile mode and the workspace tab was the active selection
+// (e.g. from before a viewport shrink, or because workspace was the demo
+// default), kick the user to the Grid tab so they're not stranded looking
+// at a hidden panel.
+watch(isMobile, (mobile) => {
+  if (mobile && activeTab.value === 'workspace') activeTab.value = 'grid'
+}, { immediate: true })
 const glow       = ref(false)
 const quickText  = ref('')
 const statusFilt = ref<'all' | 'open' | 'closed'>('all')
@@ -627,7 +649,7 @@ seedLogEntries()
 </script>
 
 <template>
-  <div class="demo-shell" :class="{ 'cathode-light': !isDark }">
+  <div class="demo-shell" :class="{ 'cathode-light': !isDark, 'mobile': isMobile }">
 
     <!-- ── Top bar ──────────────────────────────────────────────── -->
     <div class="demo-bar">
@@ -635,7 +657,11 @@ seedLogEntries()
 
       <!-- Tab switcher -->
       <div class="demo-tabs">
-        <button :class="['tab-btn', { active: activeTab === 'workspace' }]" @click="activeTab = 'workspace'">
+        <button
+          v-if="!isMobile"
+          :class="['tab-btn', { active: activeTab === 'workspace' }]"
+          @click="activeTab = 'workspace'"
+        >
           Workspace
         </button>
         <button :class="['tab-btn', { active: activeTab === 'grid' }]" @click="activeTab = 'grid'">
@@ -1112,4 +1138,43 @@ select, input[type="range"] {
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: var(--cc-base); }
 ::-webkit-scrollbar-thumb { background: var(--cc-border-2); border-radius: 2px; }
+
+/* ── Mobile mode — viewport < 720px ──────────────────────────────────── */
+/* Driven by .mobile class on .demo-shell, set from a JS resize listener
+   so we can also drop Workspace-tab markup. CSS picks up the rest:
+   wrapping toolbar, tighter padding, and a more compact tab bar. */
+.demo-shell.mobile .demo-bar {
+  flex-wrap: wrap;
+  row-gap: 6px;
+  padding: 6px 8px;
+}
+.demo-shell.mobile .demo-tabs {
+  flex: 1 1 100%;     /* tabs claim their own row */
+  order: -1;          /* render above the controls so the title and tabs are the first thing visible */
+  display: flex;
+  overflow-x: auto;   /* horizontal scroll if 4 tabs don't fit */
+  scrollbar-width: none;
+}
+.demo-shell.mobile .demo-tabs::-webkit-scrollbar { display: none; }
+.demo-shell.mobile .tab-btn {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  font-size: 11px;
+}
+.demo-shell.mobile .demo-title { font-size: 13px; }
+/* Shrink the tab content's outer chrome so the canvas itself gets max pixels. */
+.demo-shell.mobile .tab-content {
+  margin: 4px;
+  padding: 6px 8px;
+  border-radius: 10px / 12px;
+}
+/* Inputs / selects / sliders — tighten so they pack into a phone toolbar. */
+.demo-shell.mobile .demo-bar select,
+.demo-shell.mobile .demo-bar input[type="range"],
+.demo-shell.mobile .demo-bar input[type="text"] {
+  font-size: 11px;
+  height: 24px;
+}
+.demo-shell.mobile .demo-bar input[type="range"] { width: 80px !important; }
+.demo-shell.mobile .demo-bar label { font-size: 11px; }
 </style>
