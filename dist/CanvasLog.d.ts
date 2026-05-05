@@ -27,6 +27,7 @@ export interface VisualLine {
     level: LogLevel;
     timestamp: string;
     isFirstFrag: boolean;
+    widthPx: number;
 }
 export interface LogColors {
     bg: string;
@@ -40,6 +41,8 @@ export interface LogColors {
     levelDebug: string;
     levelSuccess: string;
     timestamp: string;
+    /** Optional override for the selection-row tint. Default if missing. */
+    selection?: string;
 }
 export declare const LOG_THEME_COLORS: Record<string, LogColors>;
 export declare function levelColor(c: LogColors, level: LogLevel): string;
@@ -74,11 +77,18 @@ export declare function buildVisualLines(opts: BuildVisualLinesOpts): VisualLine
 export interface DrawLogOpts {
     visualLines: VisualLine[];
     scrollY: number;
+    scrollX: number;
     theme: string;
     glow: boolean;
     showTimestamps: boolean;
     timestampWidth: number;
     hoveredLine: number;
+    /**
+     * Inclusive selection range in visualLines indices. Both -1 = no selection.
+     * Selected lines render with a stronger highlight (brand-tinted) than hover.
+     */
+    selectionStart: number;
+    selectionEnd: number;
 }
 export declare function drawLog(canvas: HTMLCanvasElement, opts: DrawLogOpts): void;
 /**

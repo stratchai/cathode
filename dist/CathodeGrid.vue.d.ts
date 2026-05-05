@@ -22,6 +22,13 @@ type __VLS_Props = {
     curvature?: number;
     scanlines?: boolean;
     glow?: boolean;
+    /**
+     * Lens-on-hover mode. When true, mousing over the grid magnifies a circular
+     * region under the cursor at ~2.5× with smoothstep falloff to 1× at the edge.
+     * Hit-testing uses raw pixel coordinates (not the magnified visual position),
+     * which matches the existing grid's behaviour under barrel curvature.
+     */
+    magnify?: boolean;
 };
 declare const _default: import("vue").DefineComponent<__VLS_Props, {}, {}, {}, {}, import("vue").ComponentOptionsMixin, import("vue").ComponentOptionsMixin, {
     "grid-ready": (args_0: {
@@ -66,5 +73,6 @@ declare const _default: import("vue").DefineComponent<__VLS_Props, {}, {}, {}, {
     theme: "none" | "phosphor" | "amber" | "paper";
     curvature: number;
     scanlines: boolean;
+    magnify: boolean;
 }, {}, {}, {}, string, import("vue").ComponentProvideOptions, false, {}, any>;
 export default _default;

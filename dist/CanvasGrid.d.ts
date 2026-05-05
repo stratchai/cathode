@@ -43,7 +43,22 @@ export interface DrawGridOpts {
     selectionAnchorCol?: number;
     formatCell: (col: ResolvedCol, row: any) => string;
     getCellStyle: (col: ResolvedCol, row: any) => CSSProperties;
+    /**
+     * Optional aggregate row drawn sticky to the bottom — one cell per column
+     * with the value already computed (sum/avg/etc) by the consumer. Pass
+     * `null` (or omit) to skip the aggregate row entirely.
+     */
+    aggregateRow?: Record<string, string> | null;
 }
+/** Height (px) of the aggregate row when present. */
+export declare const AGG_ROW_H = 28;
+export type AggFunc = 'sum' | 'avg' | 'min' | 'max' | 'count' | ((v: any[]) => any);
+/**
+ * Apply an aggregator to a column's values across the supplied rows. Skips
+ * null / undefined / non-numeric values for sum/avg/min/max; count only
+ * counts rows where the value is defined.
+ */
+export declare function aggregate(values: any[], fn: AggFunc): any;
 export declare function drawGrid(canvas: HTMLCanvasElement, opts: DrawGridOpts): void;
 /**
  * Forward barrel formula — same as the GLSL shader.
@@ -63,8 +78,8 @@ export declare function isOnFilterIcon(cx: number, colStartX: number, colWidth: 
 /** Is canvas x over the resize handle (right 6px) of a column? */
 export declare function isOnResizeHandle(cx: number, colStartX: number, colWidth: number): boolean;
 /** Hit-test a canvas-space coordinate → grid location */
-export declare function hitTest(cx: number, cy: number, cols: ResolvedCol[], rowCount: number, rowHeight: number, scrollY: number, canvasH: number, pinnedCount: number, scrollX: number): {
-    area: 'header' | 'body' | 'pinned' | 'none';
+export declare function hitTest(cx: number, cy: number, cols: ResolvedCol[], rowCount: number, rowHeight: number, scrollY: number, canvasH: number, pinnedCount: number, scrollX: number, hasAggRow?: boolean): {
+    area: 'header' | 'body' | 'pinned' | 'agg' | 'none';
     colIdx: number;
     rowIdx: number;
 };

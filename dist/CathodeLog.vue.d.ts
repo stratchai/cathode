@@ -18,6 +18,12 @@ type __VLS_Props = {
     autoscroll?: boolean;
     /** Ring-buffer cap on rendered entries — older entries scroll off. 0 = no cap. */
     maxLines?: number;
+    /**
+     * Lens-on-hover mode. When true, mousing over the log magnifies a
+     * circular region under the cursor at ~1.6× with a flat field and a
+     * subtle glass curl at the rim.
+     */
+    magnify?: boolean;
 };
 declare const _default: import("vue").DefineComponent<__VLS_Props, {
     /** Force-scroll to the latest entry. Resumes autoscroll. */
@@ -31,6 +37,7 @@ declare const _default: import("vue").DefineComponent<__VLS_Props, {
     theme: "none" | "phosphor" | "amber" | "paper";
     curvature: number;
     scanlines: boolean;
+    magnify: boolean;
     autoscroll: boolean;
     maxLines: number;
 }, {}, {}, {}, string, import("vue").ComponentProvideOptions, false, {}, any>;

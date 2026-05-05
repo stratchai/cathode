@@ -37,6 +37,13 @@ type __VLS_Props = {
      * having to register a new theme upstream.
      */
     colors?: Partial<CandleColors>;
+    /**
+     * Lens-on-hover mode. When true, mousing over the chart magnifies a
+     * circular region under the cursor at ~1.6× with a flat field and a
+     * subtle glass curl at the rim. Independent of the mouse-wheel zoom
+     * (which is chart-internal and rescales the candle slot width).
+     */
+    magnify?: boolean;
 };
 declare const _default: import("vue").DefineComponent<__VLS_Props, {}, {}, {}, {}, import("vue").ComponentOptionsMixin, import("vue").ComponentOptionsMixin, {}, string, import("vue").PublicProps, Readonly<__VLS_Props> & Readonly<{}>, {
     flat: boolean;
@@ -44,6 +51,7 @@ declare const _default: import("vue").DefineComponent<__VLS_Props, {}, {}, {}, {
     theme: "none" | "phosphor" | "amber" | "paper";
     curvature: number;
     scanlines: boolean;
+    magnify: boolean;
     compact: boolean;
     showVolume: boolean;
     volumeFraction: number;
