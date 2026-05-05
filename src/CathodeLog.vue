@@ -461,6 +461,44 @@ function onGlobalMouseUp() {
   }
 }
 
+// ── Touch handlers ─────────────────────────────────────────────────────────
+// Mobile browsers don't fire wheel events. Without these, swipe-to-scroll
+// inside the log canvas does nothing — the user is stuck on whatever the
+// initial scrollY was. We mirror the mouse-drag pan model: touchstart
+// captures the start position + current scroll; touchmove updates the
+// scroll based on finger delta; touchend clears the active flag.
+function onTouchStart(e: TouchEvent) {
+  if (e.touches.length !== 1) return
+  const t = e.touches[0]
+  panActive       = true
+  panMoved        = false
+  panStartX       = t.clientX
+  panStartY       = t.clientY
+  panStartScrollX = scrollX.value
+  panStartScrollY = scrollY.value
+  if (wrapEl.value) wrapEl.value.focus()
+}
+
+function onTouchMove(e: TouchEvent) {
+  if (!panActive || e.touches.length !== 1) return
+  // preventDefault stops the browser from page-scrolling under the finger
+  // while we're driving canvas-internal scroll.
+  e.preventDefault()
+  const t  = e.touches[0]
+  const dx = panStartX - t.clientX
+  const dy = panStartY - t.clientY
+  if (Math.abs(dx) > 4 || Math.abs(dy) > 4) panMoved = true
+  setScrollX(panStartScrollX + dx)
+  setScroll(panStartScrollY + dy)
+}
+
+function onTouchEnd() {
+  if (panActive) {
+    panActive = false
+    if (panMoved) panMoved = false
+  }
+}
+
 /**
  * Map a click to a visualLines index. Returns -1 when click is outside the
  * rendered range (e.g. blank space below the last entry).
@@ -715,6 +753,10 @@ const wrapStyle = computed<CSSProperties>(() => ({
       @mouseleave="onCanvasMouseLeave"
       @mousedown="onCanvasMouseDown"
       @click="onCanvasClick"
+      @touchstart.passive="onTouchStart"
+      @touchmove="onTouchMove"
+      @touchend="onTouchEnd"
+      @touchcancel="onTouchEnd"
     />
   </div>
 </template>
@@ -737,6 +779,10 @@ const wrapStyle = computed<CSSProperties>(() => ({
   /* Renderer.setSize() owns inline width/height. Don't override here. */
   display: block;
   outline: none;
+  /* Tell mobile browsers not to handle touches on this canvas — the JS
+     touch handlers drive scroll. Without this the browser will try to
+     page-scroll a swipe gesture, fighting with our scrollY/scrollX refs. */
+  touch-action: none;
   flex-shrink: 0;
 }
 </style>

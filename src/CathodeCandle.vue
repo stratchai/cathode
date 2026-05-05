@@ -490,6 +490,30 @@ function onGlobalMouseUp() {
   panActive = false
 }
 
+// ── Touch handlers ─────────────────────────────────────────────────────────
+// Mobile browsers don't fire wheel events. Without these, swipe-pan inside
+// the chart canvas does nothing on phones/tablets. Mirrors the mouse-drag
+// pan model with the same sign convention (drag right → see older candles
+// on the left → scrollX increases).
+function onTouchStart(e: TouchEvent) {
+  if (e.touches.length !== 1) return
+  const t = e.touches[0]
+  panActive       = true
+  panStartX       = t.clientX
+  panStartScrollX = scrollX.value
+  hover.value     = null
+}
+
+function onTouchMove(e: TouchEvent) {
+  if (!panActive || e.touches.length !== 1) return
+  e.preventDefault()
+  const t  = e.touches[0]
+  const dx = t.clientX - panStartX
+  scrollX.value = clampScroll(panStartScrollX + dx)
+}
+
+function onTouchEnd() { panActive = false }
+
 function onCanvasMouseMove(e: MouseEvent) {
   if (props.magnify && canvasEl.value) {
     const uv = eventToLensUV(e, canvasEl.value)
@@ -570,6 +594,10 @@ const wrapStyle = computed<CSSProperties>(() => ({
       @mousedown="onCanvasMouseDown"
       @mousemove="onCanvasMouseMove"
       @mouseleave="onCanvasMouseLeave"
+      @touchstart.passive="onTouchStart"
+      @touchmove="onTouchMove"
+      @touchend="onTouchEnd"
+      @touchcancel="onTouchEnd"
     />
   </div>
 </template>
@@ -591,5 +619,9 @@ const wrapStyle = computed<CSSProperties>(() => ({
   display: block;
   outline: none;
   flex-shrink: 0;
+  /* Tell mobile browsers not to handle touches on this canvas — JS touch
+     handlers drive horizontal pan. Without this, the page scrolls under
+     the finger instead of the chart panning. */
+  touch-action: none;
 }
 </style>

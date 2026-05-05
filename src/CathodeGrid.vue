@@ -385,6 +385,41 @@ function onGlobalMouseUp() {
   }
 }
 
+// ── Touch handlers ─────────────────────────────────────────────────────────
+// Mobile browsers don't fire wheel/mousemove on swipe. Without these the
+// grid is stuck at scrollY=0 on phones and tablets. Mirrors the mouse-drag
+// pan model: capture start position + scroll on touchstart, drive scroll
+// from finger delta on touchmove, clear on touchend.
+function onTouchStart(e: TouchEvent) {
+  if (e.touches.length !== 1) return
+  const t = e.touches[0]
+  panActive       = true
+  panMoved        = false
+  panStartX       = t.clientX
+  panStartY       = t.clientY
+  panStartScrollX = scrollX.value
+  panStartScrollY = scrollY.value
+}
+
+function onTouchMove(e: TouchEvent) {
+  if (!panActive || e.touches.length !== 1) return
+  e.preventDefault()
+  const t  = e.touches[0]
+  const dx = panStartX - t.clientX
+  const dy = panStartY - t.clientY
+  if (Math.abs(dx) > 4 || Math.abs(dy) > 4) panMoved = true
+  scrollX.value = Math.max(0, Math.min(maxScrollX.value, panStartScrollX + dx))
+  scrollY.value = Math.max(0, Math.min(maxScrollY.value, panStartScrollY + dy))
+  redraw()
+}
+
+function onTouchEnd() {
+  if (panActive) {
+    if (panMoved) wasDragging = true
+    panActive = false
+  }
+}
+
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 
 const wrapEl   = ref<HTMLDivElement | null>(null)
@@ -1247,6 +1282,10 @@ const accentColor = computed(() => themeC.value.accent)
       @mousedown="onCanvasMouseDown"
       @click="onCanvasClick"
       @keydown="onKeyDown"
+      @touchstart.passive="onTouchStart"
+      @touchmove="onTouchMove"
+      @touchend="onTouchEnd"
+      @touchcancel="onTouchEnd"
     />
 
     <!-- Filter popup DOM overlay — fully theme-coloured -->
@@ -1316,6 +1355,10 @@ const accentColor = computed(() => themeC.value.accent)
   display: block;
   outline: none;
   flex-shrink: 0;
+  /* Tell mobile browsers not to handle touches on this canvas — JS touch
+     handlers drive pan/scroll. Without this, swipes get hijacked by page
+     scroll and the grid stays stuck. */
+  touch-action: none;
 }
 
 /* Filter popup — all colours applied inline from themeC computed */
