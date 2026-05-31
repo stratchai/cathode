@@ -1,15 +1,28 @@
 # cathode
 
-> A retro CRT curved-screen datagrid for the web.  
+> A retro CRT curved-screen datagrid for the web.
 > Barrel-distorted columns, phosphor aesthetics, more data per viewport.
+
+[![npm](https://img.shields.io/npm/v/@stratchai/cathode.svg)](https://www.npmjs.com/package/@stratchai/cathode)
+[![license](https://img.shields.io/npm/l/@stratchai/cathode.svg)](LICENSE)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@stratchai/cathode.svg)](https://bundlephobia.com/package/@stratchai/cathode)
+[![types](https://img.shields.io/npm/types/@stratchai/cathode.svg)](https://www.npmjs.com/package/@stratchai/cathode)
+
+<!--
+  Hero screenshot — drop a PNG or animated WebP at docs/hero.png showing
+  the phosphor theme with a few rows + curved column edges visible.
+  Markdown reference below; uncomment once the image exists.
+
+  ![cathode — phosphor theme on a curved datagrid](docs/hero.png)
+-->
 
 ---
 
 ## Why
 
 Flat datagrids waste peripheral vision. A curved screen — like a real CRT monitor — angles the
-left and right columns toward the viewer, creating a panoramic effect that lets you comfortably
-read more columns without horizontal eye strain. Edge columns are also slightly foreshortened,
+left and right columns toward the viewer, creating a panoramic effect that lets you read more
+columns comfortably without horizontal eye strain. Edge columns are slightly foreshortened,
 fitting 10–15% more content at the same viewport width.
 
 The effect is pure CSS 3D (`perspective` + `rotateY` per column). Text stays real DOM —
@@ -22,6 +35,34 @@ selectable, copyable, accessible.
 ```bash
 npm install @stratchai/cathode
 ```
+
+Minimal — drop a grid into a Vue 3 app:
+
+```vue
+<script setup lang="ts">
+import { CathodeGrid, type ColDef } from '@stratchai/cathode'
+import '@stratchai/cathode/style'
+
+const cols: ColDef[] = [
+  { field: 'ticker', headerName: 'Ticker' },
+  { field: 'price',  headerName: 'Price'  },
+]
+
+const rows = [
+  { ticker: 'BTC', price: 67_341.20 },
+  { ticker: 'ETH', price: 2_481.05  },
+]
+</script>
+
+<template>
+  <CathodeGrid :column-defs="cols" :row-data="rows" theme="phosphor" />
+</template>
+```
+
+That's it. The grid renders, the curve activates, the phosphor glow lights up.
+
+<details>
+<summary>Comprehensive example — API callback, pagination, custom styling</summary>
 
 ```vue
 <script setup lang="ts">
@@ -58,6 +99,23 @@ function onGridReady(e: { api: GridApi }) {
   />
 </template>
 ```
+
+</details>
+
+---
+
+## Status
+
+**v0.1.x — production-ready for small-to-mid datasets.** Cathode is in active use in [sigma-swing-agent](https://github.com/bradyhouse/sigma-swing-agent)'s dashboard rendering live trading data.
+
+| Works well for | Choose something else for |
+|----------------|---------------------------|
+| 100s–10ks of rows | 100k+ rows (use [TanStack Table](https://tanstack.com/table) — virtual scrolling is on cathode's roadmap but not yet shipped) |
+| Vue 3 apps | React (no wrapper yet — see [ROADMAP.md](ROADMAP.md)) |
+| Dashboards, status panels, sci-fi UIs | Spreadsheet-style apps with row grouping / aggregation (not yet shipped) |
+| Built-in CRT / phosphor aesthetic | Plain Material / Tailwind look — pass `theme="none"` and bring your own CSS vars |
+
+See [`ROADMAP.md`](ROADMAP.md) for what's coming next.
 
 ---
 
@@ -140,7 +198,7 @@ interface ColDef {
 ### CSS custom properties (`theme="none"`)
 
 If no theme is set, the grid reads these variables from its parent — making it a natural
-fit alongside the dashboard's existing `:root` / `html.light` token system:
+fit alongside an existing `:root` / `html.light` token system:
 
 ```
 --c-bg, --c-surface, --c-header, --c-tx1, --c-tx2, --c-tx4,
@@ -149,53 +207,9 @@ fit alongside the dashboard's existing `:root` / `html.light` token system:
 
 ---
 
-## Roadmap
+## Contributing
 
-The target feature parity is ag-Grid Community Edition. Priority order:
-
-- [ ] Virtual scrolling (TanStack Virtual) for 10k+ row datasets
-- [ ] Column pinning (left / right freeze)
-- [ ] Column drag-to-reorder
-- [ ] Multi-column sort
-- [ ] Row grouping / aggregation
-- [ ] Column visibility chooser panel
-- [ ] React and Web Component wrappers
-- [ ] Smooth barrel-distortion via WebGL post-pass (opt-in, replaces CSS faceting)
-- [ ] CRT bezel / frame component
-
----
-
-## Development
-
-```bash
-git clone https://github.com/stratchai/cathode
-cd cathode
-npm install
-npm run dev          # demo app at http://localhost:5173
-npm run build        # library → dist/
-npm run typecheck
-```
-
-## Regression tests
-
-Headless Playwright suite that drives the demo. Each test exists to lock
-in a specific bug class — when a fix lands, a test goes with it. Run on
-every change before pushing:
-
-```bash
-npm test             # headless
-npm run test:headed  # watch the browser
-npm run test:debug   # step through with inspector (PWDEBUG=1)
-```
-
-The current suite covers:
-
-| Test | Bug class it guards |
-|------|--------------------|
-| `grid-resize.spec.ts` | `GL_INVALID_VALUE: glTexSubImage2DRobustANGLE: Offset overflows texture dimensions` (CanvasTexture not reallocated when offCanvas grows). Sweeps viewport sizes through grow + shrink cycles, asserts the GL warning never appears. |
-
-The `tests/_helpers.ts` `collectConsoleErrors` helper is the reusable
-pattern for new tests — subscribe at start, sweep the page, assert at end.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for development setup, the Playwright regression-test suite, and the release process.
 
 ---
 
