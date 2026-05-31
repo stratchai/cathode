@@ -8,13 +8,9 @@
 [![bundle size](https://img.shields.io/bundlephobia/minzip/@stratchai/cathode.svg)](https://bundlephobia.com/package/@stratchai/cathode)
 [![types](https://img.shields.io/npm/types/@stratchai/cathode.svg)](https://www.npmjs.com/package/@stratchai/cathode)
 
-<!--
-  Hero screenshot — drop a PNG or animated WebP at docs/hero.png showing
-  the phosphor theme with a few rows + curved column edges visible.
-  Markdown reference below; uncomment once the image exists.
+![cathode — workspace view in phosphor theme, curved trades grid + candle chart + log feed + terminal](docs/hero.png)
 
-  ![cathode — phosphor theme on a curved datagrid](docs/hero.png)
--->
+<sup>Captured from `demo/App.vue` — workspace tab, `theme="phosphor"`. Reproduce with `npm run capture:hero` (see `tools/capture-hero.mjs`).</sup>
 
 ---
 

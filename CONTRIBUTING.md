@@ -34,6 +34,18 @@ The current suite covers:
 
 The `tests/_helpers.ts` `collectConsoleErrors` helper is the reusable pattern for new tests — subscribe at start, sweep the page, assert at end.
 
+## Updating the hero image
+
+The README hero shot lives at `docs/hero.png` and is reproduced by driving the demo with Playwright:
+
+```bash
+npm run capture:hero
+```
+
+The script boots vite on port 5180, switches the demo to the phosphor theme, captures the workspace view at 1440×900 @ 2x, and writes the PNG. If you change the demo layout or want a different theme variant, edit `tools/capture-hero.mjs` (env vars: `CATHODE_HERO_THEME`, `CATHODE_HERO_OUT`).
+
+`docs/` is committed (so GitHub renders the hero) but excluded from the npm tarball via `files: ["dist"]` in `package.json` — consumers don't pay for the image.
+
 ## Conventions
 
 - **No silent test deletions.** If a test fails because the spec genuinely changed, update the test in the same PR. If a test catches a real regression, fix the regression.

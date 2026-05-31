@@ -25,7 +25,8 @@
     "typecheck": "vue-tsc --noEmit",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
-    "test:debug": "PWDEBUG=1 playwright test"
+    "test:debug": "PWDEBUG=1 playwright test",
+    "capture:hero": "bash tools/capture-hero.sh"
   },
   "peerDependencies": {
     "three": "^0.170.0",
