@@ -1,6 +1,6 @@
 {
   "name": "@stratchai/cathode",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "A retro CRT curved-screen datagrid for the web",
   "type": "module",
   "main": "dist/cathode.umd.cjs",

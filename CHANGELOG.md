@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.4] — 2026-05-31
+
+### Fixed
+
+- **README rendering on npmjs.com.** The hero image and `ROADMAP.md` / `CONTRIBUTING.md` links used repo-relative paths (`docs/hero.png`, `ROADMAP.md`, etc.). These resolve fine on GitHub but break on npmjs.com because none of those files ship in the tarball (`files: ["dist"]` excludes them by design — the 1.5 MB hero image shouldn't be a transport cost for every install). All three links are now absolute `github.com` / `raw.githubusercontent.com` URLs.
+
+### Note on prior versions
+
+`@stratchai/cathode` was first published to the npm registry as **v0.1.0 on 2026-05-31**. The internal versions 0.1.0, 0.1.1, 0.1.2, 0.1.3 below describe pre-publish CHANGELOG milestones — all of that code shipped together as the public v0.1.0 release.
+
+---
+
 ## [0.1.3] — 2026-04-17
 
 ### Fixed

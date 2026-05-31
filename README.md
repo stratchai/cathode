@@ -8,7 +8,7 @@
 [![bundle size](https://img.shields.io/bundlephobia/minzip/@stratchai/cathode.svg)](https://bundlephobia.com/package/@stratchai/cathode)
 [![types](https://img.shields.io/npm/types/@stratchai/cathode.svg)](https://www.npmjs.com/package/@stratchai/cathode)
 
-![cathode — workspace view in phosphor theme, curved trades grid + candle chart + log feed + terminal](docs/hero.png)
+![cathode — workspace view in phosphor theme, curved trades grid + candle chart + log feed + terminal](https://raw.githubusercontent.com/stratchai/cathode/main/docs/hero.png)
 
 <sup>Captured from `demo/App.vue` — workspace tab, `theme="phosphor"`. Reproduce with `npm run capture:hero` (see `tools/capture-hero.mjs`).</sup>
 
@@ -107,11 +107,11 @@ function onGridReady(e: { api: GridApi }) {
 | Works well for | Choose something else for |
 |----------------|---------------------------|
 | 100s–10ks of rows | 100k+ rows (use [TanStack Table](https://tanstack.com/table) — virtual scrolling is on cathode's roadmap but not yet shipped) |
-| Vue 3 apps | React (no wrapper yet — see [ROADMAP.md](ROADMAP.md)) |
+| Vue 3 apps | React (no wrapper yet — see [ROADMAP.md](https://github.com/stratchai/cathode/blob/main/ROADMAP.md)) |
 | Dashboards, status panels, sci-fi UIs | Spreadsheet-style apps with row grouping / aggregation (not yet shipped) |
 | Built-in CRT / phosphor aesthetic | Plain Material / Tailwind look — pass `theme="none"` and bring your own CSS vars |
 
-See [`ROADMAP.md`](ROADMAP.md) for what's coming next.
+See [`ROADMAP.md`](https://github.com/stratchai/cathode/blob/main/ROADMAP.md) for what's coming next.
 
 ---
 
@@ -205,7 +205,7 @@ fit alongside an existing `:root` / `html.light` token system:
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for development setup, the Playwright regression-test suite, and the release process.
+See [`CONTRIBUTING.md`](https://github.com/stratchai/cathode/blob/main/CONTRIBUTING.md) for development setup, the Playwright regression-test suite, and the release process.
 
 ---
 
