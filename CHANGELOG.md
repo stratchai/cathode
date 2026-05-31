@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.5] — 2026-05-31
+
+### Fixed
+
+- **`License: none` on npmjs.com.** `package.json` was missing the `license` field, so the npm registry reported the package as unlicensed even though the LICENSE file (MIT) is in the repo and ships in the tarball. Added `"license": "MIT"` plus the standard discoverability metadata: `author`, `repository`, `bugs`, `homepage`, `keywords`. The shields.io license badge will resolve to `MIT` once the registry CDN propagates.
+
+---
+
 ## [0.1.4] — 2026-05-31
 
 ### Fixed

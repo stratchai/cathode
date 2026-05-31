@@ -1,7 +1,28 @@
 {
   "name": "@stratchai/cathode",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A retro CRT curved-screen datagrid for the web",
+  "license": "MIT",
+  "author": "stratchai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stratchai/cathode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stratchai/cathode/issues"
+  },
+  "homepage": "https://github.com/stratchai/cathode#readme",
+  "keywords": [
+    "datagrid",
+    "vue",
+    "vue3",
+    "crt",
+    "retro",
+    "phosphor",
+    "trading-ui",
+    "dashboard",
+    "stratchai"
+  ],
   "type": "module",
   "main": "dist/cathode.umd.cjs",
   "module": "dist/cathode.js",
